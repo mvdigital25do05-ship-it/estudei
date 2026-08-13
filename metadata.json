@@ -1,0 +1,6 @@
+{
+  "name": "Estudei",
+  "description": "Dashboard de Sucesso para estudantes e concurseiros gerenciarem simulados, cronogramas de estudo semanais, progresso de matérias e metas com total controle.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

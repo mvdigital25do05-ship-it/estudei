@@ -1,0 +1,116 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile containing authentication and settings details",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Full name of the user"
+        },
+        "email": {
+          "type": "string",
+          "description": "Email address of the user"
+        },
+        "activeProfileId": {
+          "type": "string",
+          "description": "The ID of the study profile currently active"
+        },
+        "reminders": {
+          "type": "array",
+          "description": "Array of user reminders"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Creation timestamp formatted"
+        }
+      },
+      "required": ["name", "email", "activeProfileId", "reminders", "createdAt"]
+    },
+    "Profile": {
+      "title": "Profile",
+      "description": "Independent study plan/profile and goals for a specific exam",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Profile identifier"
+        },
+        "name": {
+          "type": "string",
+          "description": "Name of the target exam or role"
+        },
+        "disciplines": {
+          "type": "array",
+          "description": "Disciplines associated with this study profile"
+        },
+        "mockTests": {
+          "type": "array",
+          "description": "Associated mock exams"
+        },
+        "exerciseLogs": {
+          "type": "array",
+          "description": "Logged exercise history"
+        },
+        "activityLogs": {
+          "type": "array",
+          "description": "Session study and review activities logged"
+        },
+        "studyBlocks": {
+          "type": "array",
+          "description": "Weekly grid schedule of study slots"
+        },
+        "weeklyHours": {
+          "type": "object",
+          "description": "Hours goal completion progress"
+        },
+        "weeklyQuestions": {
+          "type": "object",
+          "description": "Questions goal completion progress"
+        },
+        "weeklyReviews": {
+          "type": "object",
+          "description": "Reviews goal completion progress"
+        },
+        "createdAt": {
+          "type": "string",
+          "description": "Date profile was initialized"
+        },
+        "examDate": {
+          "type": "string",
+          "description": "Optional/custom date of the exam"
+        },
+        "examName": {
+          "type": "string",
+          "description": "Optional/custom name of the exam"
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "disciplines",
+        "mockTests",
+        "exerciseLogs",
+        "activityLogs",
+        "studyBlocks",
+        "weeklyHours",
+        "weeklyQuestions",
+        "weeklyReviews",
+        "createdAt",
+        "examDate",
+        "examName"
+      ]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Main document for storing user's basic settings and profile metadata"
+    },
+    "/users/{userId}/profiles/{profileId}": {
+      "schema": "Profile",
+      "description": "Subcollection to store multiple concurrent study plans safely and separated"
+    }
+  }
+}

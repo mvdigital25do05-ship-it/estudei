@@ -1,0 +1,213 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Plus Jakarta Sans", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+  
+  /* Customized brand colors matching the Estudei design spec */
+  --color-primary: #006e2f;
+  --color-primary-hover: #005321;
+  --color-primary-light: #22c55e;
+  --color-primary-container: #eaf1ff;
+  --color-secondary: #006c49;
+  --color-secondary-hover: #005236;
+  --color-secondary-light: #4edea3;
+  --color-background-custom: #f8f9ff;
+  --color-surface-card: #ffffff;
+  --color-border-custom: #e2e8f0;
+}
+
+/* Base style resets and customizations */
+html, body {
+  font-family: var(--font-sans);
+  background-color: #f8f9ff;
+  color: #0b1c30;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+/* Custom scrollbars for high density metrics lists */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Perfect Dark Mode Customization matching the attached mockup image precisely */
+html.dark, html.dark body {
+  background-color: #1d2330 !important;
+  color: #f1f5f9 !important;
+}
+
+/* Override standard container / card backgrounds with lighter slate #252d3a from mockup */
+html.dark .bg-white,
+html.dark [class*="bg-white"] {
+  background-color: #252d3a !important;
+}
+
+/* Override cards with slate-900 backdrops */
+html.dark .dark\:bg-slate-900,
+html.dark .dark\:bg-slate-850,
+html.dark .dark\:bg-slate-855 {
+  background-color: #252d3a !important;
+}
+
+/* Specific background sections like body columns or page container backgrounds */
+html.dark .bg-slate-50,
+html.dark .bg-slate-100,
+html.dark .bg-slate-50\/50 {
+  background-color: #1d2330 !important;
+}
+
+/* Text overrides for readability in dark mode */
+html.dark .text-slate-900,
+html.dark .text-slate-800,
+html.dark .text-slate-750,
+html.dark .text-slate-700,
+html.dark .text-slate-705,
+html.dark h1, html.dark h2, html.dark h3, html.dark h4 {
+  color: #ffffff !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-505,
+html.dark .text-slate-550,
+html.dark .text-slate-400 {
+  color: #889bb0 !important;
+}
+
+html.dark .text-slate-600 {
+  color: #94a3b8 !important;
+}
+
+/* Precise high density borders derived from the mockup */
+html.dark .border,
+html.dark .border-slate-100,
+html.dark .border-slate-150,
+html.dark .border-slate-200,
+html.dark .border-slate-200\/80,
+html.dark .border-slate-200\/65,
+html.dark .border-slate-200\/50,
+html.dark .border-slate-300,
+html.dark .dark\:border-slate-800,
+html.dark .dark\:border-slate-850 {
+  border-color: #2c3545 !important;
+}
+
+/* Primary color highlights - vibrant turquoise #0fc2a0 from mockup */
+html.dark {
+  --color-primary: #0fc2a0;
+  --color-primary-hover: #0ca386;
+  --color-secondary: #0fc2a0;
+  --color-secondary-hover: #0ca386;
+}
+
+html.dark .text-primary,
+html.dark .dark\:text-primary,
+html.dark .dark\:text-indigo-400 {
+  color: #0fc2a0 !important;
+}
+
+html.dark .bg-primary {
+  background-color: #0fc2a0 !important;
+  color: #1d2330 !important;
+}
+
+html.dark .bg-primary:hover {
+  background-color: #0fc2a0 !important;
+  opacity: 0.92;
+}
+
+html.dark .bg-primary\/10 {
+  background-color: rgba(15, 194, 160, 0.15) !important;
+  color: #0fc2a0 !important;
+}
+
+html.dark .text-emerald-500,
+html.dark .dark\:text-emerald-400 {
+  color: #0fc2a0 !important;
+}
+
+html.dark .bg-emerald-50,
+html.dark .dark\:bg-emerald-950\/40 {
+  background-color: rgba(15, 194, 160, 0.1) !important;
+  color: #0fc2a0 !important;
+  border-color: rgba(15, 194, 160, 0.2) !important;
+}
+
+html.dark .bg-rose-50 {
+  background-color: rgba(244, 63, 94, 0.08) !important;
+  border-color: rgba(244, 63, 94, 0.25) !important;
+  color: #f43f5e !important;
+}
+
+/* Format tables so that subject names render in the brand turquoise/teal code */
+html.dark table tbody tr td:first-child,
+html.dark .text-teal-accent {
+  color: #0fc2a0 !important;
+  font-weight: 700 !important;
+}
+
+/* Modals inputs textareas select dropdowns styling */
+html.dark input,
+html.dark textarea,
+html.dark select,
+html.dark option {
+  background-color: #1d2330 !important;
+  border-color: #2c3545 !important;
+  color: #ffffff !important;
+}
+
+html.dark select option {
+  background-color: #252d3a !important;
+}
+
+/* Navigation & Sidebar layout dark palette styling */
+html.dark nav {
+  background: linear-gradient(to bottom, #252d3a, #1d2330) !important;
+  border-right: 1px solid #2c3545 !important;
+}
+
+html.dark nav button.bg-white\/10 {
+  background-color: rgba(255, 255, 255, 0.04) !important;
+}
+
+html.dark nav button.bg-white\/15 {
+  background-color: rgba(15, 194, 160, 0.15) !important;
+  color: #0fc2a0 !important;
+  border: 1px solid rgba(15, 194, 160, 0.3) !important;
+}
+
+/* Header style adaptation */
+html.dark header {
+  background-color: #1d2330 !important;
+  border-bottom: 1px solid #2c3545 !important;
+}
+
+/* Calendar streak day circle styling */
+html.dark .bg-emerald-500 {
+  background-color: #0fc2a0 !important;
+  color: #1d2330 !important;
+}
+
+/* Weekly progress bars trackers */
+html.dark .bg-slate-100 {
+  background-color: #2c3545 !important;
+}
+

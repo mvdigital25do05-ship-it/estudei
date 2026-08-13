@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Global helper primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // 2. Validation Blueprints
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'email', 'activeProfileId', 'reminders', 'createdAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.email is string && data.email.size() <= 150
+        && data.activeProfileId is string && data.activeProfileId.size() <= 128
+        && data.reminders is list && data.reminders.size() <= 200
+        && data.createdAt is string && data.createdAt.size() <= 50;
+    }
+
+    function isValidProfile(data) {
+      return data.keys().hasAll(['id', 'name'])
+        && data.id is string && isValidId(data.id)
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && (!('disciplines' in data) || data.disciplines is list && data.disciplines.size() <= 100)
+        && (!('mockTests' in data) || data.mockTests is list && data.mockTests.size() <= 100)
+        && (!('exerciseLogs' in data) || data.exerciseLogs is list && data.exerciseLogs.size() <= 1000)
+        && (!('activityLogs' in data) || data.activityLogs is list && data.activityLogs.size() <= 1000)
+        && (!('studyBlocks' in data) || data.studyBlocks is list && data.studyBlocks.size() <= 200)
+        && (!('weeklyHours' in data) || data.weeklyHours is map)
+        && (!('weeklyQuestions' in data) || data.weeklyQuestions is map)
+        && (!('weeklyReviews' in data) || data.weeklyReviews is map)
+        && (!('createdAt' in data) || data.createdAt is string && data.createdAt.size() <= 50)
+        && (!('examDate' in data) || data.examDate is string && data.examDate.size() <= 100)
+        && (!('examName' in data) || data.examName is string && data.examName.size() <= 200);
+    }
+
+    // Match blocks for Collections
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(incoming());
+      
+      // Updates: only allow modifying activeProfileId, reminders, name, or createdAt
+      allow update: if isOwner(userId) && isValidUser(incoming()) && (
+        incoming().email == existing().email &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['activeProfileId', 'reminders', 'name', 'createdAt'])
+      );
+      
+      allow delete: if false;
+
+      match /profiles/{profileId} {
+        allow get, list: if isOwner(userId);
+        
+        allow create: if isOwner(userId) 
+          && isValidId(profileId) 
+          && isValidProfile(incoming()) 
+          && incoming().id == profileId;
+        
+        allow update: if isOwner(userId) 
+          && isValidId(profileId) 
+          && isValidProfile(incoming()) && (
+            incoming().id == existing().id &&
+            incoming().diff(existing()).affectedKeys().hasOnly([
+              'name', 
+              'disciplines', 
+              'mockTests', 
+              'exerciseLogs', 
+              'activityLogs', 
+              'studyBlocks', 
+              'weeklyHours', 
+              'weeklyQuestions', 
+              'weeklyReviews',
+              'examDate',
+              'examName',
+              'createdAt'
+            ])
+          );
+        
+        allow delete: if isOwner(userId) 
+          && isValidId(profileId);
+      }
+    }
+  }
+}
