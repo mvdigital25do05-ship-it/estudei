@@ -1,0 +1,27 @@
+name: Verificar Estudei
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [feature/dashboard-inteligente-backup-20261020]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Instalar dependências
+        run: npm ci
+      - name: Verificar TypeScript
+        run: npm run lint
+      - name: Compilar aplicação
+        run: npm run build
