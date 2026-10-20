@@ -28,9 +28,14 @@ import {
   TrendingUp,
   Layers,
   Filter,
-  Coffee
+  Coffee,
+  Target,
+  Percent,
+  History,
+  CalendarCheck
 } from 'lucide-react';
-import { Discipline, Reminder, ActivityLog, StreakDay } from '../types';
+import AllStudiedDaysModal from './AllStudiedDaysModal';
+import { Discipline, Reminder, ActivityLog, StreakDay, ExerciseLog } from '../types';
 import { MOTIVATIONAL_QUOTES } from '../data';
 import { formatMinutes, formatHours, getLocalDateString, getLogDateKey } from '../utils';
 
@@ -41,6 +46,7 @@ interface DashboardHomeProps {
   onToggleReminder: (id: string) => void;
   onDeleteReminder: (id: string) => void;
   activityLogs: ActivityLog[];
+  exerciseLogs?: ExerciseLog[];
   onDeleteActivityLog: (id: string) => void;
   onUpdateDisciplineTime?: (id: string, timeMin: number) => void;
   onUpdateWeeklyGoals?: (hoursTotal: number, questionsTotal: number, hoursDone?: number, questionsDone?: number) => void;
@@ -78,6 +84,7 @@ export default function DashboardHome({
   onToggleReminder,
   onDeleteReminder,
   activityLogs,
+  exerciseLogs = [],
   onDeleteActivityLog,
   onUpdateDisciplineTime,
   onUpdateWeeklyGoals,
@@ -218,6 +225,8 @@ export default function DashboardHome({
   const [adjustChartHours, setAdjustChartHours] = useState<number>(1);
   const [adjustChartMinutes, setAdjustChartMinutes] = useState<number>(0);
   const [adjustChartQuestions, setAdjustChartQuestions] = useState<number>(0);
+  const [adjustChartCorrect, setAdjustChartCorrect] = useState<number>(0);
+  const [adjustChartWrong, setAdjustChartWrong] = useState<number>(0);
   const [adjustChartType, setAdjustChartType] = useState<'Teoria' | 'Questões' | 'Revisão' | 'Simulado'>('Teoria');
 
   const openAdjustChartForDate = (dateKey?: string) => {
@@ -228,6 +237,8 @@ export default function DashboardHome({
     setAdjustChartHours(1);
     setAdjustChartMinutes(0);
     setAdjustChartQuestions(0);
+    setAdjustChartCorrect(0);
+    setAdjustChartWrong(0);
     setAdjustChartType('Teoria');
     setShowAdjustChartModal(true);
   };
@@ -237,7 +248,17 @@ export default function DashboardHome({
     const discId = adjustChartDisciplineId || (disciplines[0]?.id || '');
     if (!discId) return;
 
-    const isQuestionsOnly = adjustChartType === 'Questões' || adjustChartType === 'Simulado' || adjustChartQuestions > 0;
+    const totalQ = adjustChartQuestions > 0 
+      ? Number(adjustChartQuestions) 
+      : ((Number(adjustChartCorrect) || 0) + (Number(adjustChartWrong) || 0));
+
+    const isQuestionsOnly = adjustChartType === 'Questões' || adjustChartType === 'Simulado' || totalQ > 0;
+
+    const correctVal = adjustChartCorrect > 0 
+      ? Number(adjustChartCorrect) 
+      : (isQuestionsOnly && totalQ > 0 ? totalQ : 0);
+    
+    const wrongVal = Number(adjustChartWrong) || (totalQ > correctVal ? totalQ - correctVal : 0);
 
     onAddStudySession({
       disciplineId: discId,
@@ -245,8 +266,8 @@ export default function DashboardHome({
       minutes: Number(adjustChartMinutes) || 0,
       type: adjustChartType,
       material: 'Ajuste Manual do Gráfico',
-      correct: isQuestionsOnly && adjustChartQuestions > 0 ? Number(adjustChartQuestions) : undefined,
-      wrong: 0,
+      correct: correctVal,
+      wrong: wrongVal,
       notes: 'Ajuste manual no gráfico semanal',
       date: adjustChartDate
     });
@@ -263,8 +284,33 @@ export default function DashboardHome({
   };
 
   // State for subject study time visualization panel
+  const [painelView, setPainelView] = useState<'tempo' | 'topicos'>('tempo');
   const [subjectTimeframe, setSubjectTimeframe] = useState<'all' | 'week' | 'today'>('all');
   const [subjectSortBy, setSubjectSortBy] = useState<'time' | 'name' | 'questions'>('time');
+
+  const topicsStats = useMemo(() => {
+    const map = new Map<string, { topicName: string; disciplineName: string; total: number; correct: number; wrong: number }>();
+    
+    exerciseLogs.forEach(log => {
+      // Use topicName as fallback if topicId is missing, though exerciseLogs usually has both
+      const key = `${log.disciplineId}_${log.topicId || log.topicName}`;
+      const existing = map.get(key) || { 
+        topicName: log.topicName, 
+        disciplineName: log.disciplineName, 
+        total: 0, 
+        correct: 0, 
+        wrong: 0 
+      };
+      
+      existing.total += log.questionsCount;
+      existing.correct += log.correctAnswers;
+      existing.wrong += log.wrongAnswers;
+      
+      map.set(key, existing);
+    });
+    
+    return Array.from(map.values()).sort((a, b) => b.wrong - a.wrong);
+  }, [exerciseLogs]);
 
   const subjectTimeStats = useMemo(() => {
     const todayKey = getLocalDateString(new Date());
@@ -370,6 +416,13 @@ export default function DashboardHome({
   // Local state for non-blocking deletion of activity logs inside iframe environment
   const [deletingLogId, setDeletingLogId] = useState<string | null>(null);
 
+  // Local state for limiting activity logs feed to 20 items to prevent screen from stretching
+  const [showAllActivities, setShowAllActivities] = useState(false);
+  const displayedActivityLogs = useMemo(() => {
+    if (showAllActivities) return activityLogs;
+    return activityLogs.slice(0, 20);
+  }, [activityLogs, showAllActivities]);
+
   const handleDisciplineChangeForStudy = (id: string) => {
     setStudyDisciplineId(id);
     setStudyConcludeTopic(false);
@@ -442,8 +495,45 @@ export default function DashboardHome({
   const doneTopics = disciplines.reduce((acc, curr) => acc + curr.topicsDone, 0);
   const overallSyllabusProgress = totalTopics > 0 ? Math.round((doneTopics / totalTopics) * 100) : 0;
 
+  // --- Desempenho Filter State & Calculations ---
+  const [selectedPerformanceDisciplines, setSelectedPerformanceDisciplines] = useState<string[]>([]);
+  const [isPerformanceFilterOpen, setIsPerformanceFilterOpen] = useState(false);
+
+  const perfStats = useMemo(() => {
+    // 1. Geral (all disciplines)
+    const geralCorrect = disciplines.reduce((acc, curr) => acc + curr.correctAnswers, 0);
+    const geralWrong = disciplines.reduce((acc, curr) => acc + curr.wrongAnswers, 0);
+    const geralTotal = geralCorrect + geralWrong;
+    const geralAcc = geralTotal > 0 ? Math.round((geralCorrect / geralTotal) * 100) : 0;
+
+    // 2. Selecionadas
+    const selDisciplines = disciplines.filter(d => selectedPerformanceDisciplines.includes(d.id));
+    const selCorrect = selDisciplines.reduce((acc, curr) => acc + curr.correctAnswers, 0);
+    const selWrong = selDisciplines.reduce((acc, curr) => acc + curr.wrongAnswers, 0);
+    const selTotal = selCorrect + selWrong;
+    const selAcc = selTotal > 0 ? Math.round((selCorrect / selTotal) * 100) : 0;
+
+    // 3. Geral sem Selecionadas
+    const unselDisciplines = disciplines.filter(d => !selectedPerformanceDisciplines.includes(d.id));
+    const unselCorrect = unselDisciplines.reduce((acc, curr) => acc + curr.correctAnswers, 0);
+    const unselWrong = unselDisciplines.reduce((acc, curr) => acc + curr.wrongAnswers, 0);
+    const unselTotal = unselCorrect + unselWrong;
+    const unselAcc = unselTotal > 0 ? Math.round((unselCorrect / unselTotal) * 100) : 0;
+
+    return {
+      geral: { correct: geralCorrect, wrong: geralWrong, total: geralTotal, acc: geralAcc },
+      sel: { correct: selCorrect, wrong: selWrong, total: selTotal, acc: selAcc },
+      unsel: { correct: unselCorrect, wrong: unselWrong, total: unselTotal, acc: unselAcc }
+    };
+  }, [disciplines, selectedPerformanceDisciplines]);
+  // ----------------------------------------------
+
+
   // Dynamic Weekly Study Chart Calculation
   const [chartWeekOffset, setChartWeekOffset] = useState<number>(0);
+  const [chartMetricMode, setChartMetricMode] = useState<'volume' | 'accuracy'>('volume');
+  const [showAccuracyBadges, setShowAccuracyBadges] = useState<boolean>(true);
+  const [selectedChartDayKey, setSelectedChartDayKey] = useState<string | null>(null);
 
   const weeklyChartData = useMemo(() => {
     const dataList = [];
@@ -457,32 +547,67 @@ export default function DashboardHome({
     startOfWeek.setDate(today.getDate() - currentDayOfWeek + (chartWeekOffset * 7));
 
     const weekdayAbbrs = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
+    const weekdayFull = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
 
     for (let i = 0; i < 7; i++) {
       const d = new Date(startOfWeek);
       d.setDate(startOfWeek.getDate() + i);
       const dateKey = getLocalDateString(d);
       const label = weekdayAbbrs[d.getDay()];
+      const fullDayName = weekdayFull[d.getDay()];
       
       let minsStudied = 0;
       let qCount = 0;
+      let correctCount = 0;
+      let wrongCount = 0;
       
       activityLogs.forEach(log => {
         const logDate = getLogDateKey(log);
         if (logDate === dateKey) {
           minsStudied += log.timeSpentMin || 0;
-          qCount += log.questionsSolved || 0;
+          let c = log.correctAnswers || 0;
+          let w = log.wrongAnswers || 0;
+          let q = log.questionsSolved || (c + w);
+
+          // Fallback parsing from details if correct/wrong were not explicitly set on log
+          if (c === 0 && w === 0 && log.details) {
+            const match = log.details.match(/\((\d+)\s*acertos?\s*\/\s*(\d+)\s*erros?\)/i);
+            if (match) {
+              c = parseInt(match[1], 10) || 0;
+              w = parseInt(match[2], 10) || 0;
+              if (q === 0) q = c + w;
+            } else {
+              const simMatch = log.details.match(/\((\d+)\/(\d+)\s*acertos?\)/i);
+              if (simMatch) {
+                c = parseInt(simMatch[1], 10) || 0;
+                const tot = parseInt(simMatch[2], 10) || c;
+                w = Math.max(0, tot - c);
+                if (q === 0) q = tot;
+              }
+            }
+          }
+
+          qCount += q;
+          correctCount += c;
+          wrongCount += w;
         }
       });
       
       const dayHours = minsStudied / 60;
+      const totalAnswered = (correctCount + wrongCount) > 0 ? (correctCount + wrongCount) : qCount;
+      const accuracyPercent = totalAnswered > 0 ? Math.round((correctCount / totalAnswered) * 100) : null;
       
       dataList.push({
         label,
+        fullDayName,
         dateKey,
         hours: Math.round(dayHours * 10) / 10,
         minsStudied, // precise study minutes
         questions: qCount,
+        correctCount,
+        wrongCount,
+        totalAnswered,
+        accuracyPercent,
         isToday: dateKey === todayStr,
         dateFormatted: d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
       });
@@ -492,12 +617,34 @@ export default function DashboardHome({
     endOfWeek.setDate(startOfWeek.getDate() + 6);
     const rangeStr = `${startOfWeek.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })} a ${endOfWeek.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}`;
 
+    const totalWeeklyQuestions = dataList.reduce((acc, curr) => acc + curr.questions, 0);
+    const totalWeeklyCorrect = dataList.reduce((acc, curr) => acc + curr.correctCount, 0);
+    const totalWeeklyWrong = dataList.reduce((acc, curr) => acc + curr.wrongCount, 0);
+    const totalWeeklyAnswered = (totalWeeklyCorrect + totalWeeklyWrong) > 0 ? (totalWeeklyCorrect + totalWeeklyWrong) : totalWeeklyQuestions;
+    const weeklyAccuracyPercent = totalWeeklyAnswered > 0 ? Math.round((totalWeeklyCorrect / totalWeeklyAnswered) * 100) : null;
+
     return {
       dataList,
       rangeStr,
-      isCurrentWeek: chartWeekOffset === 0
+      isCurrentWeek: chartWeekOffset === 0,
+      totalWeeklyQuestions,
+      totalWeeklyCorrect,
+      totalWeeklyWrong,
+      totalWeeklyAnswered,
+      weeklyAccuracyPercent
     };
   }, [activityLogs, chartWeekOffset]);
+
+  // Active selected day for detail preview under chart
+  const activeSelectedDay = useMemo(() => {
+    if (selectedChartDayKey) {
+      const found = weeklyChartData.dataList.find(d => d.dateKey === selectedChartDayKey);
+      if (found) return found;
+    }
+    const todayItem = weeklyChartData.dataList.find(d => d.isToday);
+    if (todayItem) return todayItem;
+    return weeklyChartData.dataList[weeklyChartData.dataList.length - 1];
+  }, [weeklyChartData, selectedChartDayKey]);
 
   const maxWeeklyHours = useMemo(() => {
     const maxVal = Math.max(...weeklyChartData.dataList.map(d => d.hours));
@@ -512,6 +659,19 @@ export default function DashboardHome({
   // Local states for registration timeline & paginated streak view
   const [streakViewMode, setStreakViewMode] = useState<'14d' | 'monthly'>('14d');
   const [streakPage, setStreakPage] = useState<number>(-1);
+  const [showAllStudiedDaysModal, setShowAllStudiedDaysModal] = useState<boolean>(false);
+
+  // Total unique dates effectively studied (excluding rest-only days)
+  const totalStudiedDaysCount = useMemo(() => {
+    const dates = new Set<string>();
+    activityLogs.forEach(log => {
+      const dStr = getLogDateKey(log);
+      if (dStr && log.disciplineName !== 'Dia de Descanso') {
+        dates.add(dStr);
+      }
+    });
+    return dates.size;
+  }, [activityLogs]);
 
   const regDate = useMemo(() => {
     if (activeProfileCreatedAt) {
@@ -851,36 +1011,119 @@ export default function DashboardHome({
         </div>
 
         {/* Desempenho Widget */}
-        <div className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between min-h-[120px]">
+        <div className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs flex flex-col justify-between min-h-[120px] relative z-20">
           <div className="flex justify-between items-start">
-            <h3 className="font-semibold text-[10px] text-slate-500 uppercase tracking-wider">Desempenho</h3>
-            <div className="text-right">
-              <span className="block text-[10px] text-emerald-600 font-bold">{totalCorrect} Acertos</span>
-              <span className="block text-[10px] text-rose-500 font-bold">{totalWrong} Erros</span>
-            </div>
-          </div>
-          
-          <div className="flex items-center justify-between mt-2">
-            <div className="font-display font-extrabold text-3xl text-slate-800 leading-none">{overallAccuracy}%</div>
-            
-            {/* SVG Progress Arc Gauge */}
-            <div className="relative w-12 h-12">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" strokeWidth="3" />
-                <circle 
-                  cx="18" cy="18" r="15.915" 
-                  fill="none" 
-                  stroke="#22c55e" 
-                  strokeWidth="3" 
-                  strokeDasharray={`${overallAccuracy}, 100`} 
-                  className="transition-all duration-500 ease-out"
-                />
-              </svg>
-              <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-600">
-                {overallAccuracy}%
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold text-[10px] text-slate-500 uppercase tracking-wider">Desempenho</h3>
+              <div className="relative">
+                <button 
+                  onClick={() => setIsPerformanceFilterOpen(!isPerformanceFilterOpen)}
+                  className={`text-[9px] font-bold px-1.5 py-0.5 rounded cursor-pointer transition-colors flex items-center gap-1 ${selectedPerformanceDisciplines.length > 0 ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500 hover:bg-slate-200'}`}
+                  title="Filtrar por matéria"
+                >
+                  <Filter size={10} />
+                  {selectedPerformanceDisciplines.length > 0 ? `${selectedPerformanceDisciplines.length} Filtros` : 'Filtrar'}
+                </button>
+                
+                {isPerformanceFilterOpen && (
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setIsPerformanceFilterOpen(false)} />
+                    <div className="absolute top-full left-0 mt-1 bg-white border border-slate-200 shadow-xl rounded-lg p-3 z-50 w-56 max-h-60 overflow-y-auto">
+                      <div className="flex justify-between items-center mb-2">
+                        <h4 className="text-[10px] font-bold text-slate-700 uppercase tracking-wider">Matérias</h4>
+                        {selectedPerformanceDisciplines.length > 0 && (
+                          <button 
+                            onClick={() => setSelectedPerformanceDisciplines([])}
+                            className="text-[9px] text-rose-500 hover:text-rose-700 font-bold cursor-pointer"
+                          >
+                            Limpar
+                          </button>
+                        )}
+                      </div>
+                      <div className="space-y-1.5">
+                        {disciplines.map(d => (
+                          <label key={d.id} className="flex items-center gap-2 cursor-pointer group">
+                            <input 
+                              type="checkbox" 
+                              className="rounded border-slate-300 text-emerald-500 focus:ring-emerald-500 w-3.5 h-3.5 cursor-pointer"
+                              checked={selectedPerformanceDisciplines.includes(d.id)}
+                              onChange={(e) => {
+                                if (e.target.checked) {
+                                  setSelectedPerformanceDisciplines([...selectedPerformanceDisciplines, d.id]);
+                                } else {
+                                  setSelectedPerformanceDisciplines(selectedPerformanceDisciplines.filter(id => id !== d.id));
+                                }
+                              }}
+                            />
+                            <span className="text-[11px] font-medium text-slate-600 group-hover:text-slate-900 truncate" title={d.name}>{d.name}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
+
+            {selectedPerformanceDisciplines.length === 0 && (
+              <div className="text-right">
+                <span className="block text-[10px] text-slate-500 font-bold">{perfStats.geral.total} Feitas</span>
+                <span className="block text-[10px] text-emerald-600 font-bold">{perfStats.geral.correct} Acertos</span>
+                <span className="block text-[10px] text-rose-500 font-bold">{perfStats.geral.wrong} Erros</span>
+              </div>
+            )}
           </div>
+          
+          {selectedPerformanceDisciplines.length === 0 ? (
+            <div className="flex items-center justify-between mt-2">
+              <div className="font-display font-extrabold text-3xl text-slate-800 leading-none">{perfStats.geral.acc}%</div>
+              
+              {/* SVG Progress Arc Gauge */}
+              <div className="relative w-12 h-12">
+                <svg className="w-full h-full transform -rotate-90" viewBox="0 0 36 36">
+                  <circle cx="18" cy="18" r="15.915" fill="none" stroke="#f1f5f9" strokeWidth="3" />
+                  <circle 
+                    cx="18" cy="18" r="15.915" 
+                    fill="none" 
+                    stroke="#22c55e" 
+                    strokeWidth="3" 
+                    strokeDasharray={`${perfStats.geral.acc}, 100`} 
+                    className="transition-all duration-500 ease-out"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-slate-600">
+                  {perfStats.geral.acc}%
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-3 space-y-2 flex-1 flex flex-col justify-end">
+              {/* Geral */}
+              <div className="flex justify-between items-center bg-slate-50 px-2 py-1.5 rounded">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Geral</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-medium text-slate-400">{perfStats.geral.total}F / {perfStats.geral.correct}C / {perfStats.geral.wrong}E</span>
+                  <span className="text-[11px] font-extrabold text-slate-700 w-7 text-right">{perfStats.geral.acc}%</span>
+                </div>
+              </div>
+              {/* Selecionadas */}
+              <div className="flex justify-between items-center bg-emerald-50 px-2 py-1.5 rounded">
+                <span className="text-[9px] font-bold text-emerald-600 uppercase tracking-wider truncate max-w-[80px]" title="Matérias Selecionadas">Sel.</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-medium text-emerald-500/70">{perfStats.sel.total}F / {perfStats.sel.correct}C / {perfStats.sel.wrong}E</span>
+                  <span className="text-[11px] font-extrabold text-emerald-600 w-7 text-right">{perfStats.sel.acc}%</span>
+                </div>
+              </div>
+              {/* Geral s/ Selecionadas */}
+              <div className="flex justify-between items-center bg-slate-50 px-2 py-1.5 rounded">
+                <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider truncate max-w-[80px]" title="Geral sem as selecionadas">Sem Sel.</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-medium text-slate-400">{perfStats.unsel.total}F / {perfStats.unsel.correct}C / {perfStats.unsel.wrong}E</span>
+                  <span className="text-[11px] font-extrabold text-slate-700 w-7 text-right">{perfStats.unsel.acc}%</span>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Progresso no Edital Widget */}
@@ -966,6 +1209,20 @@ export default function DashboardHome({
               </div>
 
               <div className="flex flex-wrap items-center gap-2 text-xs">
+            {/* Button: Ver Todos os Dias Estudados */}
+            <button
+              type="button"
+              onClick={() => setShowAllStudiedDaysModal(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs cursor-pointer active:scale-95 transition-all"
+              title="Ver histórico completo de todos os dias efetivamente estudados"
+            >
+              <CalendarCheck size={14} className="stroke-[2.5]" />
+              <span>Ver Todos os Dias Estudados</span>
+              <span className="bg-emerald-800/80 text-white text-[10px] px-1.5 py-0.2 rounded-full font-black">
+                {totalStudiedDaysCount}
+              </span>
+            </button>
+
             {/* View Mode Toggle Button */}
             <div className="flex bg-slate-100 dark:bg-slate-800 p-0.5 rounded-lg border border-slate-200/40 dark:border-slate-700/40">
               <button
@@ -1043,9 +1300,20 @@ export default function DashboardHome({
               Você ainda não registrou nenhum estudo neste plano. Toque em qualquer círculozinho abaixo para registrar presença instantaneamente! 🚀
             </div>
           ) : (
-            <p className="text-slate-705 dark:text-slate-300 text-sm font-semibold text-balance">
-              Você está há <strong className="text-emerald-500 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-sm">{streakCalc.currentStreak} {streakCalc.currentStreak === 1 ? 'dia' : 'dias'}</strong> sem falhar! Seu recorde atual é de <span className="font-bold text-slate-805 dark:text-white">{streakCalc.recordStreak} {streakCalc.recordStreak === 1 ? 'dia' : 'dias'}</span>. 🏆
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <p className="text-slate-705 dark:text-slate-300 text-sm font-semibold text-balance">
+                Você está há <strong className="text-emerald-500 font-bold bg-emerald-50 dark:bg-emerald-950/40 px-2 py-0.5 rounded-sm">{streakCalc.currentStreak} {streakCalc.currentStreak === 1 ? 'dia' : 'dias'}</strong> sem falhar! Seu recorde atual é de <span className="font-bold text-slate-805 dark:text-white">{streakCalc.recordStreak} {streakCalc.recordStreak === 1 ? 'dia' : 'dias'}</span>. 🏆
+              </p>
+              <button
+                type="button"
+                onClick={() => setShowAllStudiedDaysModal(true)}
+                className="text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline flex items-center gap-1 w-fit cursor-pointer transition-colors"
+                title="Abrir histórico detalhado com todos os dias estudados"
+              >
+                <span>Ver histórico completo ({totalStudiedDaysCount} {totalStudiedDaysCount === 1 ? 'dia' : 'dias'})</span>
+                <ChevronRight size={13} />
+              </button>
+            </div>
           )}
         </div>
 
@@ -1266,61 +1534,95 @@ export default function DashboardHome({
         {/* Left Column (Wide) - Panel & Daily Agenda */}
         <div className="lg:col-span-2 space-y-6">
           
-          {/* PAINEL VISUAL DE TEMPO ESTUDADO POR MATÉRIA */}
+          {/* PAINEL VISUAL DE TEMPO ESTUDADO POR MATÉRIA E TÓPICOS */}
           <div className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs space-y-5">
-            {/* Header + Timeframe Tabs */}
+            {/* Header + Main View Toggle Tabs */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2.5">
                 <div className="p-2.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-xl">
-                  <Clock size={20} />
+                  {painelView === 'tempo' ? <Clock size={20} /> : <FileQuestion size={20} />}
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-sm text-slate-800 dark:text-white">Tempo Estudado por Matéria</h3>
+                    <h3 className="font-bold text-sm text-slate-800 dark:text-white">
+                      {painelView === 'tempo' ? 'Tempo Estudado por Matéria' : 'Desempenho por Tópico'}
+                    </h3>
                     <span className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">
-                      Painel de Tempo
+                      Painel
                     </span>
                   </div>
-                  <p className="text-[11px] text-slate-400">Visualização proporcional e acumulada de dedicate por disciplina</p>
+                  <p className="text-[11px] text-slate-400">
+                    {painelView === 'tempo' 
+                      ? 'Visualização proporcional e acumulada de dedicate por disciplina' 
+                      : 'Análise de questões feitas e ranking de erros por tópico'}
+                  </p>
                 </div>
               </div>
 
-              {/* Timeframe Filter Tabs */}
+              {/* View Toggle */}
               <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-xl self-start sm:self-auto text-xs font-bold shrink-0">
                 <button
-                  onClick={() => setSubjectTimeframe('all')}
+                  onClick={() => setPainelView('tempo')}
                   className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    subjectTimeframe === 'all'
+                    painelView === 'tempo'
                       ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs font-black'
                       : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
                   }`}
                 >
-                  Geral (Total)
+                  Tempo (Matérias)
                 </button>
                 <button
-                  onClick={() => setSubjectTimeframe('week')}
+                  onClick={() => setPainelView('topicos')}
                   className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    subjectTimeframe === 'week'
+                    painelView === 'topicos'
                       ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs font-black'
                       : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
                   }`}
                 >
-                  Esta Semana
-                </button>
-                <button
-                  onClick={() => setSubjectTimeframe('today')}
-                  className={`px-3 py-1.5 rounded-lg transition-all cursor-pointer ${
-                    subjectTimeframe === 'today'
-                      ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs font-black'
-                      : 'text-slate-500 hover:text-slate-800 dark:text-slate-400'
-                  }`}
-                >
-                  Hoje
+                  Questões (Tópicos)
                 </button>
               </div>
             </div>
 
-            {/* Metrics Summary Row */}
+            {painelView === 'tempo' ? (
+              <div className="space-y-5">
+                {/* Timeframe Filter Tabs */}
+                <div className="flex justify-end">
+                  <div className="flex items-center gap-1 bg-slate-50 border border-slate-100 dark:bg-slate-800/50 p-1 rounded-lg text-[10px] font-bold shrink-0">
+                    <button
+                      onClick={() => setSubjectTimeframe('all')}
+                      className={`px-2 py-1 rounded transition-all cursor-pointer ${
+                        subjectTimeframe === 'all'
+                          ? 'bg-white dark:bg-slate-700 text-emerald-600 shadow-xs'
+                          : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                    >
+                      Total
+                    </button>
+                    <button
+                      onClick={() => setSubjectTimeframe('week')}
+                      className={`px-2 py-1 rounded transition-all cursor-pointer ${
+                        subjectTimeframe === 'week'
+                          ? 'bg-white dark:bg-slate-700 text-emerald-600 shadow-xs'
+                          : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                    >
+                      Semana
+                    </button>
+                    <button
+                      onClick={() => setSubjectTimeframe('today')}
+                      className={`px-2 py-1 rounded transition-all cursor-pointer ${
+                        subjectTimeframe === 'today'
+                          ? 'bg-white dark:bg-slate-700 text-emerald-600 shadow-xs'
+                          : 'text-slate-400 hover:text-slate-600'
+                      }`}
+                    >
+                      Hoje
+                    </button>
+                  </div>
+                </div>
+
+                {/* Metrics Summary Row */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="bg-slate-50 dark:bg-slate-850 p-3.5 rounded-xl border border-slate-100 dark:border-slate-800 flex items-center gap-3">
                 <div className="p-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg shrink-0">
@@ -1493,6 +1795,66 @@ export default function DashboardHome({
                 </div>
               )}
             </div>
+          </div>
+        ) : (
+            <div className="space-y-4">
+              <div className="bg-slate-50 dark:bg-slate-850 p-4 rounded-xl border border-slate-100 dark:border-slate-800">
+                <div className="flex justify-between items-center text-[10px] uppercase font-black tracking-wider text-slate-400 mb-4">
+                  <span>Ranking de Erros por Tópico</span>
+                  <span>{topicsStats.length} Tópicos Registrados</span>
+                </div>
+                
+                {topicsStats.length === 0 ? (
+                  <div className="text-center py-6 text-slate-400 text-xs font-medium">
+                    Nenhum tópico registrado nas suas sessões de estudo (Questões).
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {topicsStats.map((stat, idx) => {
+                      const acc = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
+                      let badgeColor = 'bg-slate-100 text-slate-600';
+                      if (acc >= 80) badgeColor = 'bg-emerald-100 text-emerald-700';
+                      else if (acc >= 60) badgeColor = 'bg-amber-100 text-amber-700';
+                      else if (acc > 0) badgeColor = 'bg-rose-100 text-rose-700';
+                      
+                      return (
+                        <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 rounded-lg gap-3">
+                          <div className="flex flex-col min-w-0">
+                            <span className="font-bold text-xs text-slate-800 dark:text-white truncate" title={stat.topicName}>
+                              {stat.topicName || 'Tópico Geral'}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider truncate">
+                              {stat.disciplineName}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center gap-4 shrink-0">
+                            <div className="text-center">
+                              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Feitas</div>
+                              <div className="text-sm font-black text-slate-700">{stat.total}</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Erros</div>
+                              <div className="text-sm font-black text-rose-500">{stat.wrong}</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Acertos</div>
+                              <div className="text-sm font-black text-emerald-500">{stat.correct}</div>
+                            </div>
+                            <div className="w-12 text-right">
+                              <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${badgeColor}`}>
+                                {acc}%
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           </div>
 
           {/* Subjects Table Panel */}
@@ -1686,100 +2048,296 @@ export default function DashboardHome({
           </div>
 
           {/* Estudo Semanal SVG Visualizer */}
-          <div className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs">
-            <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
-              <div className="flex items-center gap-2">
-                <h3 className="font-semibold text-[10px] text-slate-500 uppercase tracking-wider">Estudo Semanal (Dom – Sáb)</h3>
-                <button 
-                  onClick={() => openAdjustChartForDate()}
-                  className="text-[9px] bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 font-bold px-2 py-0.5 rounded border border-emerald-200/60 dark:border-emerald-800/60 transition-colors flex items-center gap-1 active:scale-95 cursor-pointer"
-                  title="Corrigir ou adicionar registro de estudo diretamente no gráfico"
-                >
-                  <Edit2 size={10} /> Corrigir Gráfico
-                </button>
+          <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3.5">
+            {/* 1. Header Bar: Title, Week Navigator, and Main Adjust Action */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 rounded-xl shrink-0">
+                  {chartMetricMode === 'volume' ? <BarChart2 size={18} /> : <Target size={18} />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-xs text-slate-800 dark:text-white uppercase tracking-wider">
+                      Estudo Semanal
+                    </h3>
+                    <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-500">
+                      (Dom – Sáb)
+                    </span>
+                  </div>
+                  <p className="text-[10.5px] text-slate-500 dark:text-slate-400">
+                    {chartMetricMode === 'volume' 
+                      ? 'Volume diário de estudo e questões resolvidas' 
+                      : 'Rendimento diário e taxa de acertos em questões'}
+                  </p>
+                </div>
               </div>
 
-              {/* Navigation Controls for Weekly Chart */}
-              <div className="flex items-center gap-1">
-                {chartWeekOffset !== 0 && (
+              {/* Actions on the Right: Week Navigator + Primary Adjust Button */}
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-auto">
+                {/* Week Navigator */}
+                <div className="flex items-center bg-slate-100/90 dark:bg-slate-800/80 p-0.5 rounded-lg border border-slate-200/60 dark:border-slate-700/60">
+                  {chartWeekOffset !== 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setChartWeekOffset(0)}
+                      className="text-[9.5px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-100/80 dark:bg-emerald-950/80 px-2 py-1 rounded-md hover:bg-emerald-200/70 dark:hover:bg-emerald-900/60 transition-all cursor-pointer mr-1"
+                      title="Voltar para a semana atual"
+                    >
+                      Hoje
+                    </button>
+                  )}
                   <button
                     type="button"
-                    onClick={() => setChartWeekOffset(0)}
-                    className="text-[9px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40 px-1.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 transition-all cursor-pointer mr-1"
-                    title="Voltar para a semana atual"
+                    onClick={() => setChartWeekOffset(prev => prev - 1)}
+                    className="p-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white rounded-md hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer"
+                    title="Semana anterior"
                   >
-                    Semana Atual
+                    <ChevronLeft size={13} />
                   </button>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setChartWeekOffset(prev => prev - 1)}
-                  className="p-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-                  title="Semana anterior"
+                  <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 px-2 min-w-[85px] text-center font-mono flex items-center justify-center gap-1">
+                    <Calendar size={11} className="text-slate-400" />
+                    <span>{weeklyChartData.rangeStr}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setChartWeekOffset(prev => prev + 1)}
+                    className="p-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white rounded-md hover:bg-white dark:hover:bg-slate-700 transition-all cursor-pointer"
+                    title="Próxima semana"
+                  >
+                    <ChevronRight size={13} />
+                  </button>
+                </div>
+
+                {/* Primary Chart Adjust Action Button */}
+                <button 
+                  onClick={() => openAdjustChartForDate(activeSelectedDay?.dateKey)}
+                  className="text-[11px] font-bold bg-emerald-50 dark:bg-emerald-950/40 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 text-emerald-700 dark:text-emerald-300 px-2.5 py-1.5 rounded-lg border border-emerald-200/80 dark:border-emerald-800/80 transition-all flex items-center gap-1.5 active:scale-95 cursor-pointer shadow-2xs"
+                  title="Registrar ou ajustar tempo e questões no gráfico"
                 >
-                  <ChevronLeft size={14} />
-                </button>
-                <span className="text-[10px] font-bold text-slate-600 dark:text-slate-300 min-w-[95px] text-center font-mono">
-                  {weeklyChartData.rangeStr}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => setChartWeekOffset(prev => prev + 1)}
-                  className="p-1 text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white rounded hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
-                  title="Próxima semana"
-                >
-                  <ChevronRight size={14} />
+                  <Edit2 size={12} />
+                  <span>Ajustar Gráfico</span>
                 </button>
               </div>
             </div>
-            
-            {/* Custom SVG line with shadow/highlight */}
-            <div className="h-28 w-full bg-slate-50 rounded-lg border border-slate-100 relative mt-3 flex items-end justify-between p-2 px-6">
-              <div className="absolute inset-0 flex flex-col justify-between py-2 px-3 pointer-events-none opacity-40 z-0">
-                <div className="border-b border-dashed border-slate-200 w-full h-1" />
-                <div className="border-b border-dashed border-slate-200 w-full h-1" />
-                <div className="border-b border-dashed border-slate-200 w-full h-1" />
+
+            {/* 2. Sub-Toolbar: Segmented Metric Mode Switcher & Context Controls */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 bg-slate-50/90 dark:bg-slate-850/60 p-1.5 rounded-xl border border-slate-200/60 dark:border-slate-800">
+              {/* Segmented Mode Switcher */}
+              <div className="flex items-center bg-slate-200/70 dark:bg-slate-800 p-0.5 rounded-lg text-[11px] font-bold">
+                <button
+                  type="button"
+                  onClick={() => setChartMetricMode('volume')}
+                  className={`px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                    chartMetricMode === 'volume'
+                      ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  <Clock size={13} />
+                  <span>Horas & Volume</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChartMetricMode('accuracy')}
+                  className={`px-3 py-1.5 rounded-md transition-all cursor-pointer flex items-center gap-1.5 ${
+                    chartMetricMode === 'accuracy'
+                      ? 'bg-white dark:bg-slate-700 text-emerald-700 dark:text-emerald-300 shadow-xs font-black'
+                      : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                >
+                  <Target size={13} className={chartMetricMode === 'accuracy' ? 'text-emerald-500' : ''} />
+                  <span>% de Acertos Diário</span>
+                </button>
               </div>
 
-              {/* Bar charts overlays (Hours - Green) */}
+              {/* Contextual Action / Indicator on the Right */}
+              <div className="flex items-center gap-2">
+                {chartMetricMode === 'volume' ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowAccuracyBadges(prev => !prev)}
+                    className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 shadow-2xs ${
+                      showAccuracyBadges
+                        ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800'
+                        : 'bg-white dark:bg-slate-800 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                    }`}
+                    title="Alternar exibição de badges de porcentagem de acertos sobre as colunas"
+                  >
+                    <Percent size={11} />
+                    <span>Exibir % nos Dias</span>
+                    <span className={`text-[8.5px] px-1 py-0.2 rounded-full font-mono uppercase font-black ${
+                      showAccuracyBadges 
+                        ? 'bg-emerald-600 text-white' 
+                        : 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400'
+                    }`}>
+                      {showAccuracyBadges ? 'ON' : 'OFF'}
+                    </span>
+                  </button>
+                ) : (
+                  <div className="flex items-center gap-1.5 text-[9.5px] font-bold text-slate-500 dark:text-slate-400">
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 bg-emerald-500 rounded-full" /> ≥80%</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 bg-amber-500 rounded-full" /> 60-79%</span>
+                    <span className="flex items-center gap-1"><span className="w-2 h-2 bg-rose-500 rounded-full" /> &lt;60%</span>
+                  </div>
+                )}
+
+                {/* Weekly Average Accuracy Pill */}
+                {weeklyChartData.weeklyAccuracyPercent !== null && (
+                  <div className="hidden sm:flex items-center gap-1 text-[10px] font-bold bg-white dark:bg-slate-800 px-2 py-1 rounded-lg border border-slate-200/70 dark:border-slate-700 font-mono">
+                    <span className="text-slate-400">Média:</span>
+                    <span className={`font-black ${
+                      weeklyChartData.weeklyAccuracyPercent >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
+                      weeklyChartData.weeklyAccuracyPercent >= 60 ? 'text-amber-600 dark:text-amber-400' :
+                      'text-rose-600 dark:text-rose-400'
+                    }`}>
+                      {weeklyChartData.weeklyAccuracyPercent}%
+                    </span>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            {/* Custom SVG Visualization Container */}
+            <div className="h-36 w-full bg-slate-50 dark:bg-slate-850/50 rounded-xl border border-slate-100 dark:border-slate-800 relative mt-2 flex items-end justify-between p-2 px-6">
+              {/* Background Reference Lines */}
+              <div className="absolute inset-0 flex flex-col justify-between py-3 px-3 pointer-events-none opacity-40 z-0">
+                <div className="border-b border-dashed border-slate-200 dark:border-slate-700 w-full h-1 flex justify-end pr-1">
+                  {chartMetricMode === 'accuracy' && <span className="text-[7px] text-slate-400 font-mono -mt-2">100%</span>}
+                </div>
+                <div className="border-b border-dashed border-slate-200 dark:border-slate-700 w-full h-1 flex justify-end pr-1">
+                  {chartMetricMode === 'accuracy' && <span className="text-[7px] text-slate-400 font-mono -mt-2">75%</span>}
+                </div>
+                <div className="border-b border-dashed border-slate-200 dark:border-slate-700 w-full h-1 flex justify-end pr-1">
+                  {chartMetricMode === 'accuracy' && <span className="text-[7px] text-slate-400 font-mono -mt-2">50%</span>}
+                </div>
+                <div className="border-b border-dashed border-slate-200 dark:border-slate-700 w-full h-1 flex justify-end pr-1">
+                  {chartMetricMode === 'accuracy' && <span className="text-[7px] text-slate-400 font-mono -mt-2">25%</span>}
+                </div>
+              </div>
+
+              {/* Day Columns */}
               {weeklyChartData.dataList.map((day, idx) => {
-                const pct = day.hours / maxWeeklyHours;
-                const barHeightPct = day.hours > 0 ? Math.max(16, Math.min(80, pct * 80)) : 14;
+                const isSelected = activeSelectedDay?.dateKey === day.dateKey;
+
+                // Accuracy Mode Metrics
+                const hasQuestions = day.questions > 0;
+                const acc = day.accuracyPercent;
+                
+                // Height calculation
+                let barHeightPct = 14;
+                if (chartMetricMode === 'volume') {
+                  const pct = day.hours / maxWeeklyHours;
+                  barHeightPct = day.hours > 0 ? Math.max(16, Math.min(80, pct * 80)) : 14;
+                } else {
+                  // Accuracy mode
+                  if (acc !== null) {
+                    barHeightPct = Math.max(16, Math.min(82, (acc / 100) * 82));
+                  } else {
+                    barHeightPct = 12;
+                  }
+                }
+
+                // Color styling for accuracy
+                let accBadgeClass = 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300';
+                let accBarGradient = 'bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400';
+                if (acc !== null) {
+                  if (acc >= 80) {
+                    accBadgeClass = 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/80 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700';
+                    accBarGradient = 'bg-gradient-to-t from-emerald-600 to-emerald-400 text-white shadow-sm shadow-emerald-500/20';
+                  } else if (acc >= 60) {
+                    accBadgeClass = 'bg-amber-100 text-amber-800 dark:bg-amber-950/80 dark:text-amber-300 border border-amber-300 dark:border-amber-700';
+                    accBarGradient = 'bg-gradient-to-t from-amber-600 to-amber-400 text-white shadow-sm shadow-amber-500/20';
+                  } else {
+                    accBadgeClass = 'bg-rose-100 text-rose-800 dark:bg-rose-950/80 dark:text-rose-300 border border-rose-300 dark:border-rose-700';
+                    accBarGradient = 'bg-gradient-to-t from-rose-600 to-rose-400 text-white shadow-sm shadow-rose-500/20';
+                  }
+                }
                 
                 return (
                   <div 
                     key={idx} 
-                    onClick={() => openAdjustChartForDate(day.dateKey)}
-                    className="flex flex-col items-center justify-end h-full w-8 relative group z-10 select-none cursor-pointer"
-                    title={`Toque para corrigir/ajustar estudos do dia (${day.dateKey})`}
+                    onClick={() => {
+                      setSelectedChartDayKey(day.dateKey);
+                    }}
+                    className="flex flex-col items-center justify-end h-full w-9 relative group z-10 select-none cursor-pointer"
+                    title={`Clique para selecionar e detalhar (${day.dateFormatted})`}
                   >
-                    {/* Tooltip showing exact hours studied & questions solved */}
-                    <div className="absolute bottom-full mb-1 bg-slate-800 dark:bg-slate-700 text-white text-[9px] font-bold px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30 shadow-md leading-tight shrink-0 text-center whitespace-nowrap min-w-[70px]">
-                      <div className="font-bold text-emerald-400">{day.dateFormatted} • {formatMinutes(day.minsStudied)}</div>
-                      <div className="text-purple-300 text-[8px]">{day.questions} questões</div>
-                      <div className="text-[7px] text-slate-400 border-t border-slate-700 mt-0.5 pt-0.5">Clique p/ editar</div>
+                    {/* Rich Tooltip showing exact hours, questions & daily accuracy */}
+                    <div className="absolute bottom-full mb-1.5 bg-slate-800 dark:bg-slate-700 text-white text-[9px] font-bold px-2.5 py-1.5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-30 shadow-xl leading-snug shrink-0 text-center whitespace-nowrap min-w-[100px] border border-slate-700">
+                      <div className="font-black text-emerald-400">{day.fullDayName} • {day.dateFormatted}</div>
+                      <div className="text-slate-300 text-[8px] mt-0.5">⏱️ Tempo: {formatMinutes(day.minsStudied)}</div>
+                      <div className="text-purple-300 text-[8px]">
+                        📝 Questões: {day.questions} ({day.correctCount} acertos / {day.wrongCount} erros)
+                      </div>
+                      <div className="mt-1 pt-1 border-t border-slate-700 flex items-center justify-center gap-1 font-black">
+                        <span>🎯 Acertos:</span>
+                        {acc !== null ? (
+                          <span className={acc >= 80 ? 'text-emerald-400' : acc >= 60 ? 'text-amber-400' : 'text-rose-400'}>
+                            {acc}%
+                          </span>
+                        ) : (
+                          <span className="text-slate-400">Sem questões</span>
+                        )}
+                      </div>
+                      <div className="text-[7.5px] text-slate-400 mt-0.5">Toque p/ detalhar/editar</div>
                     </div>
 
-                    {/* Green Bar Column */}
+                    {/* Floating Accuracy Tag above bar */}
+                    {chartMetricMode === 'volume' ? (
+                      showAccuracyBadges && acc !== null && (
+                        <div className="absolute mb-1 bottom-[calc(var(--bar-h)+2px)] pointer-events-none z-20 transition-transform group-hover:scale-110">
+                          <span className={`text-[8px] font-black px-1.5 py-0.2 rounded-full shadow-2xs leading-none whitespace-nowrap ${accBadgeClass}`}>
+                            {acc}%
+                          </span>
+                        </div>
+                      )
+                    ) : (
+                      <div className="mb-1 pointer-events-none z-20 transition-transform group-hover:scale-110">
+                        {acc !== null ? (
+                          <span className={`text-[8.5px] font-black px-1.5 py-0.5 rounded-full shadow-2xs leading-none flex items-center gap-0.5 ${accBadgeClass}`}>
+                            <span>{acc}%</span>
+                          </span>
+                        ) : (
+                          <span className="text-[8px] text-slate-400 font-bold opacity-60">-</span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Bar Column */}
                     <div 
-                      className={`w-6 rounded-t-sm transition-all duration-300 flex flex-col justify-end items-center pb-1 relative ${
-                        day.isToday ? 'ring-2 ring-emerald-400 ring-offset-1 dark:ring-offset-slate-900' : ''
+                      className={`w-7 rounded-t-md transition-all duration-300 flex flex-col justify-end items-center pb-1.5 relative ${
+                        isSelected 
+                          ? 'ring-2 ring-emerald-500 ring-offset-2 dark:ring-offset-slate-900 shadow-md' 
+                          : day.isToday 
+                          ? 'ring-1 ring-emerald-400/80 ring-offset-1 dark:ring-offset-slate-900' 
+                          : ''
                       } ${
-                        day.hours > 0 
-                          ? 'bg-emerald-500 group-hover:bg-emerald-600 shadow-md shadow-emerald-500/10 text-white' 
-                          : 'bg-slate-200 dark:bg-slate-700 group-hover:bg-slate-300 dark:group-hover:bg-slate-600 text-slate-500 dark:text-slate-400'
+                        chartMetricMode === 'volume'
+                          ? day.hours > 0 
+                            ? 'bg-emerald-500 group-hover:bg-emerald-600 shadow-md shadow-emerald-500/10 text-white' 
+                            : 'bg-slate-200 dark:bg-slate-700 group-hover:bg-slate-300 dark:group-hover:bg-slate-600 text-slate-500 dark:text-slate-400'
+                          : acc !== null
+                            ? `${accBarGradient} group-hover:brightness-105`
+                            : 'bg-slate-200/80 dark:bg-slate-800 border border-dashed border-slate-300 dark:border-slate-700 text-slate-400'
                       }`}
-                      style={{ height: `${barHeightPct}%` }}
+                      style={{ height: `${barHeightPct}%`, '--bar-h': `${barHeightPct}%` } as React.CSSProperties}
                     >
-                      <span className="text-[9px] font-extrabold select-none leading-none">{day.label}</span>
+                      <span className="text-[9px] font-extrabold select-none leading-none drop-shadow-2xs">{day.label}</span>
                       <span className="text-[7px] font-bold opacity-80 leading-none mt-0.5">{day.dateFormatted.split('/')[0]}</span>
                     </div>
+
+                    {/* Subtext under bar in accuracy mode */}
+                    {chartMetricMode === 'accuracy' && (
+                      <span className="text-[7.5px] font-mono font-bold text-slate-400 mt-1 leading-none">
+                        {hasQuestions ? `${day.correctCount}/${day.totalAnswered}` : '0 q'}
+                      </span>
+                    )}
                   </div>
                 );
               })}
               
-              {/* SVG Trendline overlay for questions count (purple line) with smooth wave spline */}
-              {maxWeeklyQuestions > 0 && (() => {
+              {/* SVG Trendline overlay (Volume mode: Questions count spline) */}
+              {chartMetricMode === 'volume' && maxWeeklyQuestions > 0 && (() => {
                 const pts = weeklyChartData.dataList.map((day, idx) => {
                   const x = 5 + (idx * 15);
                   const pct = day.questions / maxWeeklyQuestions;
@@ -1787,11 +2345,10 @@ export default function DashboardHome({
                   return { x, y };
                 });
 
-                // Function to generate smooth cubic Bezier path for wave effect
                 const getBezierPath = (pointsArray: {x: number, y: number}[]) => {
                   if (pointsArray.length === 0) return "";
                   let path = `M ${pointsArray[0].x} ${pointsArray[0].y}`;
-                  const tension = 0.35; // optimal wave tension
+                  const tension = 0.35;
                   for (let i = 0; i < pointsArray.length - 1; i++) {
                     const p0 = pointsArray[i];
                     const p1 = pointsArray[i + 1];
@@ -1809,7 +2366,6 @@ export default function DashboardHome({
                 };
 
                 const bezierPathStr = getBezierPath(pts);
-                // Create custom gradient-filled area path by connecting to bottom edges
                 const fillPathStr = pts.length > 0
                   ? `${bezierPathStr} L ${pts[pts.length - 1].x} 94 L ${pts[0].x} 94 Z`
                   : "";
@@ -1823,7 +2379,6 @@ export default function DashboardHome({
                       </linearGradient>
                     </defs>
 
-                    {/* Wave background glowing filled area */}
                     {fillPathStr && (
                       <path 
                         d={fillPathStr} 
@@ -1832,7 +2387,6 @@ export default function DashboardHome({
                       />
                     )}
 
-                    {/* Smooth curve stroke */}
                     <path 
                       d={bezierPathStr} 
                       fill="none" 
@@ -1843,7 +2397,6 @@ export default function DashboardHome({
                       className="transition-all duration-300"
                     />
                     
-                    {/* Connection dots */}
                     {pts.map((pt, idx) => (
                       <g key={idx}>
                         <circle 
@@ -1860,24 +2413,216 @@ export default function DashboardHome({
                   </svg>
                 );
               })()}
+
+              {/* SVG Trendline overlay (Accuracy mode: Daily accuracy progression wave) */}
+              {chartMetricMode === 'accuracy' && (() => {
+                const daysWithAcc = weeklyChartData.dataList
+                  .map((day, idx) => ({ ...day, idx }))
+                  .filter(d => d.accuracyPercent !== null);
+
+                if (daysWithAcc.length === 0) return null;
+
+                const pts = daysWithAcc.map((day) => {
+                  const x = 5 + (day.idx * 15);
+                  const pct = (day.accuracyPercent || 0) / 100;
+                  const y = 92 - (pct * 80);
+                  return { x, y, acc: day.accuracyPercent };
+                });
+
+                const getBezierPath = (pointsArray: {x: number, y: number}[]) => {
+                  if (pointsArray.length === 0) return "";
+                  if (pointsArray.length === 1) return `M ${pointsArray[0].x} ${pointsArray[0].y}`;
+                  let path = `M ${pointsArray[0].x} ${pointsArray[0].y}`;
+                  const tension = 0.3;
+                  for (let i = 0; i < pointsArray.length - 1; i++) {
+                    const p0 = pointsArray[i];
+                    const p1 = pointsArray[i + 1];
+                    const pPrev = pointsArray[i - 1] || p0;
+                    const pNext = pointsArray[i + 2] || p1;
+                    
+                    const cp1x = p0.x + (p1.x - pPrev.x) * tension;
+                    const cp1y = p0.y + (p1.y - pPrev.y) * tension;
+                    const cp2x = p1.x - (pNext.x - p0.x) * tension;
+                    const cp2y = p1.y - (pNext.y - p0.y) * tension;
+                    
+                    path += ` C ${cp1x.toFixed(2)} ${cp1y.toFixed(2)}, ${cp2x.toFixed(2)} ${cp2y.toFixed(2)}, ${p1.x.toFixed(2)} ${p1.y.toFixed(2)}`;
+                  }
+                  return path;
+                };
+
+                const bezierPathStr = getBezierPath(pts);
+
+                return (
+                  <svg className="absolute inset-0 w-full h-full pointer-events-none pb-6 pt-3 px-7 z-20" viewBox="0 0 100 100" preserveAspectRatio="none">
+                    <defs>
+                      <linearGradient id="accuracyLineGlow" x1="0" y1="0" x2="1" y2="0">
+                        <stop offset="0%" stopColor="#10b981" />
+                        <stop offset="100%" stopColor="#06b6d4" />
+                      </linearGradient>
+                    </defs>
+
+                    {pts.length > 1 && (
+                      <path 
+                        d={bezierPathStr} 
+                        fill="none" 
+                        stroke="url(#accuracyLineGlow)" 
+                        strokeWidth="2.5" 
+                        strokeLinecap="round" 
+                        strokeLinejoin="round" 
+                        strokeDasharray="4 2"
+                        className="transition-all duration-300 drop-shadow-xs"
+                      />
+                    )}
+                    
+                    {pts.map((pt, idx) => (
+                      <g key={idx}>
+                        <circle 
+                          cx={pt.x} 
+                          cy={pt.y} 
+                          r="3" 
+                          fill="#ffffff" 
+                          stroke={pt.acc && pt.acc >= 80 ? '#10b981' : pt.acc && pt.acc >= 60 ? '#f59e0b' : '#f43f5e'} 
+                          strokeWidth="1.8" 
+                          className="transition-all duration-300 drop-shadow-xs" 
+                        />
+                      </g>
+                    ))}
+                  </svg>
+                );
+              })()}
             </div>
             
-            <div className="flex justify-center gap-4 mt-3 text-[10px] font-semibold text-slate-500">
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-emerald-500 rounded-sm" /> Horas Estudadas (Coluna)</span>
-              <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 bg-purple-500 rounded-sm" /> Questões Resolvidas (Linha)</span>
+            {/* Chart Legend & Summary Info */}
+            <div className="flex flex-wrap justify-between items-center gap-2 pt-1 text-[10.5px] font-semibold text-slate-500 dark:text-slate-400">
+              {chartMetricMode === 'volume' ? (
+                <div className="flex flex-wrap items-center gap-4">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 bg-emerald-500 rounded-xs" />
+                    <span>Horas Estudadas (Coluna)</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 bg-purple-500 rounded-xs" />
+                    <span>Questões Resolvidas (Linha)</span>
+                  </span>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 bg-emerald-500 rounded-xs" />
+                    <span>Alta Taxa (≥ 80%)</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 bg-amber-500 rounded-xs" />
+                    <span>Regular (60–79%)</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 bg-rose-500 rounded-xs" />
+                    <span>Atenção (&lt; 60%)</span>
+                  </span>
+                  <span className="flex items-center gap-1.5">
+                    <span className="w-2.5 h-2.5 bg-slate-300 dark:bg-slate-700 rounded-xs" />
+                    <span>Sem questões (-)</span>
+                  </span>
+                </div>
+              )}
+
+              {/* Weekly Summary Stat */}
+              <div className="flex items-center gap-2 font-mono text-[11px]">
+                <span className="text-slate-400">Total na semana:</span>
+                <span className="font-bold text-slate-700 dark:text-slate-200">
+                  {formatHours(weeklyChartData.dataList.reduce((acc, curr) => acc + curr.hours, 0))}
+                </span>
+                <span className="text-slate-300 dark:text-slate-700">•</span>
+                <span className="font-bold text-purple-600 dark:text-purple-400">
+                  {weeklyChartData.totalWeeklyQuestions} q
+                </span>
+              </div>
             </div>
+
+            {/* Interactive Selected Day Performance Card */}
+            {activeSelectedDay && (
+              <div className="p-3.5 bg-slate-50 dark:bg-slate-850/80 rounded-xl border border-slate-200/70 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3 mt-1 transition-all">
+                <div className="flex items-center gap-3">
+                  <div className={`p-2.5 rounded-xl shrink-0 ${
+                    activeSelectedDay.accuracyPercent !== null
+                      ? activeSelectedDay.accuracyPercent >= 80
+                        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-400'
+                        : activeSelectedDay.accuracyPercent >= 60
+                        ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-400'
+                        : 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-400'
+                      : 'bg-slate-200/80 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                  }`}>
+                    <Target size={20} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-slate-800 dark:text-white">
+                        {activeSelectedDay.fullDayName}, {activeSelectedDay.dateFormatted}
+                      </span>
+                      {activeSelectedDay.isToday && (
+                        <span className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-800 dark:text-emerald-300 text-[9px] font-black px-1.5 py-0.5 rounded-full">
+                          Hoje
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-slate-500 dark:text-slate-400 font-medium flex items-center gap-2 mt-0.5">
+                      <span>⏱️ {formatMinutes(activeSelectedDay.minsStudied)} de estudo</span>
+                      <span>•</span>
+                      <span>📝 {activeSelectedDay.questions} questões resolvidas</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3.5 self-end sm:self-auto">
+                  <div className="text-right">
+                    <div className="text-[9.5px] uppercase font-bold tracking-wider text-slate-400">
+                      Percentual de Acertos do Dia
+                    </div>
+                    {activeSelectedDay.accuracyPercent !== null ? (
+                      <div className="flex items-center gap-2 justify-end">
+                        <span className={`text-base font-black font-display ${
+                          activeSelectedDay.accuracyPercent >= 80 ? 'text-emerald-600 dark:text-emerald-400' :
+                          activeSelectedDay.accuracyPercent >= 60 ? 'text-amber-600 dark:text-amber-400' :
+                          'text-rose-600 dark:text-rose-400'
+                        }`}>
+                          🎯 {activeSelectedDay.accuracyPercent}%
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-bold font-mono">
+                          ({activeSelectedDay.correctCount} acertos / {activeSelectedDay.wrongCount} erros)
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-xs font-bold text-slate-400">Nenhuma questão neste dia</span>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => openAdjustChartForDate(activeSelectedDay.dateKey)}
+                    className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-800 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 text-slate-700 hover:text-emerald-700 dark:text-slate-200 dark:hover:text-emerald-300 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-700 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs shrink-0 active:scale-95"
+                    title={`Ajustar ou lançar dados de ${activeSelectedDay.dateFormatted}`}
+                  >
+                    <Edit2 size={12} />
+                    <span>Editar Dia</span>
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* 4. Bottom Row: Reminders (Checklist) & Recent Activitytimeline */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* 4. Bottom Row: Reminders (Checklist) & Recent Activity Timeline Cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         
         {/* Lembretes (Reminders) widget */}
-        <div className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs flex flex-col h-full justify-between">
+        <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold text-[10px] text-slate-500 uppercase tracking-wider">Lembretes & Compromissos</h3>
+              <div className="flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-primary" />
+                <h3 className="font-bold text-xs text-slate-800 dark:text-white uppercase tracking-wider">Lembretes & Compromissos</h3>
+              </div>
               <button 
                 type="button"
                 onClick={() => setShowAddReminderModal(true)}
@@ -1888,17 +2633,17 @@ export default function DashboardHome({
               </button>
             </div>
 
-            <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1 scrollbar-thin">
+            <div className="space-y-2 max-h-[380px] overflow-y-auto pr-1 scrollbar-thin">
               {reminders.map((rem) => (
-                <div key={rem.id} className="flex items-center justify-between p-2.5 border border-slate-100 rounded-lg hover:bg-slate-50/50 transition-colors">
+                <div key={rem.id} className="flex items-center justify-between p-2.5 border border-slate-100 dark:border-slate-800 rounded-lg hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
                   <div className="flex items-center gap-3">
                     <input 
                       type="checkbox" 
                       checked={rem.completed} 
                       onChange={() => onToggleReminder(rem.id)}
-                      className="rounded border-slate-300 text-primary focus:ring-primary w-4.5 h-4.5 cursor-pointer"
+                      className="rounded border-slate-300 dark:border-slate-700 text-primary focus:ring-primary w-4.5 h-4.5 cursor-pointer"
                     />
-                    <span className={`text-[12px] font-semibold text-slate-700 ${rem.completed ? 'line-through text-slate-400' : ''}`}>
+                    <span className={`text-[12px] font-semibold text-slate-700 dark:text-slate-200 ${rem.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>
                       {rem.text}
                     </span>
                   </div>
@@ -1906,20 +2651,20 @@ export default function DashboardHome({
                   <div className="flex items-center gap-2">
                     <span className={`text-[9px] font-black px-2 py-0.5 rounded ${
                       rem.type === 'INSCRIÇÕES' 
-                        ? 'bg-purple-100 text-purple-700 border border-purple-200' 
+                        ? 'bg-purple-100 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border border-purple-200 dark:border-purple-800' 
                         : rem.type === 'PROVAS' 
-                        ? 'bg-blue-100 text-blue-700 border border-blue-200'
-                        : 'bg-slate-100 text-slate-600 border border-slate-200'
+                        ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+                        : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
                     }`}>
                       {rem.type}
                     </span>
-                    <span className="text-[10px] text-slate-400 bg-slate-50 px-2 py-0.5 rounded border border-slate-200/50 font-bold">
+                    <span className="text-[10px] text-slate-400 bg-slate-50 dark:bg-slate-800/60 px-2 py-0.5 rounded border border-slate-200/50 dark:border-slate-700 font-bold">
                       {rem.date}
                     </span>
                     <button 
                       type="button" 
                       onClick={() => onDeleteReminder(rem.id)}
-                      className="text-slate-400 hover:text-rose-500 transition-colors hover:bg-rose-50 p-1 rounded cursor-pointer"
+                      className="text-slate-400 hover:text-rose-500 transition-colors hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1 rounded cursor-pointer"
                       title="Deletar"
                     >
                       <Trash2 size={13} />
@@ -1936,7 +2681,7 @@ export default function DashboardHome({
           
           <button 
             type="button"
-            className="w-full flex items-center justify-center gap-2 bg-slate-50 hover:bg-slate-100 text-slate-600 hover:text-slate-800 py-2.5 rounded-lg text-xs font-bold transition-all border border-slate-200 mt-4 cursor-pointer active:scale-98"
+            className="w-full flex items-center justify-center gap-2 bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white py-2.5 rounded-lg text-xs font-bold transition-all border border-slate-200 dark:border-slate-700 mt-4 cursor-pointer active:scale-98"
             onClick={() => setShowAddReminderModal(true)}
           >
             <Plus size={15} />
@@ -1944,71 +2689,181 @@ export default function DashboardHome({
           </button>
         </div>
 
-        {/* Últimas Atividades timeline feed */}
-        <div className="bg-white rounded-xl p-5 border border-slate-200/80 shadow-xs">
-          <h3 className="font-semibold text-[10px] text-slate-500 uppercase tracking-wider mb-4">Últimas Atividades Registradas</h3>
-          
-          <div className="relative pl-5 border-l border-slate-200/80 space-y-5 py-1">
-            {activityLogs.map((log) => (
-              <div key={log.id} className="relative group transition-all">
-                {/* Node indicator */}
-                <div className="absolute -left-[26px] top-1 w-3 h-3 bg-white border-2 border-primary rounded-full group-hover:bg-primary transition-all shadow-xs" />
-                
-                <div className="flex justify-between items-start mb-1 text-[11px]">
-                  <h4 className="font-bold text-primary uppercase tracking-wider text-[10px]">{log.disciplineName}</h4>
-                  <div className="flex items-center gap-2">
-                    <span className="text-slate-400 font-bold flex items-center gap-1 font-mono">
-                      <Clock size={11} />
-                      {log.timestamp}
-                    </span>
-                    {deletingLogId === log.id ? (
-                      <div className="flex items-center gap-1 bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/50 px-1.5 py-0.5 rounded-md animate-scale-up">
-                        <span className="text-[9px] text-rose-700 dark:text-rose-400 font-extrabold uppercase tracking-wide mr-1 select-none">Excluir?</span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onDeleteActivityLog(log.id);
-                            setDeletingLogId(null);
-                          }}
-                          className="bg-rose-500 text-white font-black text-[9px] px-1.5 py-0.5 rounded shadow-xs hover:bg-rose-600 cursor-pointer uppercase transition-colors"
-                          title="Sim, excluir"
-                        >
-                          Sim
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeletingLogId(null)}
-                          className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-350 font-bold text-[9px] px-1.5 py-0.5 rounded hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer uppercase transition-colors"
-                          title="Cancelar"
-                        >
-                          Não
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setDeletingLogId(log.id);
-                        }}
-                        className="text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200/50 p-1 rounded-md transition-all cursor-pointer flex items-center justify-center"
-                        title="Excluir este registro de estudo"
-                      >
-                        <Trash2 size={13} />
-                      </button>
-                    )}
-                  </div>
-                </div>
-                
-                <p className="font-semibold text-xs text-slate-700 leading-relaxed">
-                  {log.details}
-                </p>
+        {/* Últimas Atividades Cards Feed (Limitado aos 20 mais recentes com scroll inteligente) */}
+        <div className="bg-white dark:bg-slate-900 rounded-xl p-5 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col">
+          {/* Card Header with count badge and optional expand */}
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-3.5 pb-2.5 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="p-1.5 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 rounded-lg">
+                <History size={16} />
               </div>
-            ))}
-            
-            {activityLogs.length === 0 && (
-              <p className="text-center text-xs text-slate-400 py-8">Nenhum estudo registrado ainda. Registre no cronômetro da página Planejamento!</p>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-bold text-xs text-slate-800 dark:text-white uppercase tracking-wider">
+                    Últimas Atividades Registradas
+                  </h3>
+                  <span className="text-[10px] font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 px-2 py-0.5 rounded-full border border-slate-200/60 dark:border-slate-700">
+                    {activityLogs.length > 20 && !showAllActivities ? '20 mais recentes' : `${activityLogs.length} ${activityLogs.length === 1 ? 'registro' : 'registros'}`}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {activityLogs.length > 20 && (
+              <button
+                type="button"
+                onClick={() => setShowAllActivities(prev => !prev)}
+                className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 hover:underline cursor-pointer flex items-center gap-1 transition-colors"
+              >
+                <span>{showAllActivities ? 'Mostrar 20 recentes' : `Ver todas (${activityLogs.length})`}</span>
+              </button>
             )}
           </div>
+          
+          {/* Activity Cards List with defined max-height to avoid stretching */}
+          <div className="space-y-2.5 max-h-[480px] overflow-y-auto pr-1.5 scrollbar-thin">
+            {displayedActivityLogs.map((log) => {
+              // Calculate accuracy if question stats exist
+              const totalQ = log.questionsSolved || ((log.correctAnswers || 0) + (log.wrongAnswers || 0));
+              const hasAnswers = (log.correctAnswers !== undefined || log.wrongAnswers !== undefined) && totalQ > 0;
+              const accPct = hasAnswers ? Math.round(((log.correctAnswers || 0) / totalQ) * 100) : null;
+
+              // Type badge styles
+              const typeColor = log.studyType === 'Teoria'
+                ? 'bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200/60 dark:border-blue-800/60'
+                : log.studyType === 'Questões'
+                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-200/60 dark:border-emerald-800/60'
+                : log.studyType === 'Revisão'
+                ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/60 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/60'
+                : log.studyType === 'Simulado'
+                ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300 border-rose-200/60 dark:border-rose-800/60'
+                : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border-slate-200 dark:border-slate-700';
+
+              return (
+                <div 
+                  key={log.id} 
+                  className="p-3 bg-slate-50/80 dark:bg-slate-850/60 hover:bg-slate-100/80 dark:hover:bg-slate-800/80 rounded-xl border border-slate-200/70 dark:border-slate-800 transition-all hover:shadow-2xs group"
+                >
+                  {/* Card Top Row: Discipline, Type Badge, Timestamp, Delete */}
+                  <div className="flex items-center justify-between gap-2 mb-1.5">
+                    <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                      <span className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate max-w-[180px] sm:max-w-[220px]">
+                        {log.disciplineName}
+                      </span>
+                      {log.studyType && (
+                        <span className={`text-[9px] font-black px-1.5 py-0.5 rounded border uppercase tracking-wider ${typeColor}`}>
+                          {log.studyType}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[10px] font-mono font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1 bg-white dark:bg-slate-900 px-1.5 py-0.5 rounded border border-slate-200/60 dark:border-slate-800">
+                        <Clock size={10} className="text-slate-400" />
+                        {log.timestamp}
+                      </span>
+
+                      {deletingLogId === log.id ? (
+                        <div className="flex items-center gap-1 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900/60 px-1.5 py-0.5 rounded-md animate-scale-up">
+                          <span className="text-[8.5px] text-rose-700 dark:text-rose-400 font-black uppercase mr-0.5 select-none">Excluir?</span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              onDeleteActivityLog(log.id);
+                              setDeletingLogId(null);
+                            }}
+                            className="bg-rose-500 text-white font-black text-[8.5px] px-1.5 py-0.5 rounded shadow-xs hover:bg-rose-600 cursor-pointer uppercase transition-colors"
+                            title="Confirmar exclusão"
+                          >
+                            Sim
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setDeletingLogId(null)}
+                            className="bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-bold text-[8.5px] px-1.5 py-0.5 rounded hover:bg-slate-300 dark:hover:bg-slate-700 cursor-pointer uppercase transition-colors"
+                            title="Cancelar"
+                          >
+                            Não
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setDeletingLogId(log.id)}
+                          className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 p-1 rounded-md transition-all cursor-pointer opacity-70 group-hover:opacity-100"
+                          title="Excluir este registro de estudo"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Card Metrics Chips (Time, Questions, Accuracy) */}
+                  {(log.timeSpentMin > 0 || totalQ > 0) && (
+                    <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+                      {log.timeSpentMin > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-md border border-emerald-200/60 dark:border-emerald-800/60 font-mono">
+                          ⏱️ {formatMinutes(log.timeSpentMin)}
+                        </span>
+                      )}
+
+                      {totalQ > 0 && (
+                        <span className="inline-flex items-center gap-1 text-[10px] font-bold text-purple-700 dark:text-purple-300 bg-purple-50 dark:bg-purple-950/50 px-2 py-0.5 rounded-md border border-purple-200/60 dark:border-purple-800/60 font-mono">
+                          📝 {totalQ} questões
+                        </span>
+                      )}
+
+                      {accPct !== null && (
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-black px-2 py-0.5 rounded-md border font-mono ${
+                          accPct >= 80 
+                            ? 'bg-emerald-100/80 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 border-emerald-300 dark:border-emerald-700' 
+                            : accPct >= 60 
+                            ? 'bg-amber-100/80 text-amber-800 dark:bg-amber-950 dark:text-amber-300 border-amber-300 dark:border-amber-700' 
+                            : 'bg-rose-100/80 text-rose-800 dark:bg-rose-950 dark:text-rose-300 border-rose-300 dark:border-rose-700'
+                        }`}>
+                          🎯 {accPct}% ({log.correctAnswers || 0}A / {log.wrongAnswers || 0}E)
+                        </span>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Card Description/Details */}
+                  <p className="font-medium text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed">
+                    {log.details}
+                  </p>
+                </div>
+              );
+            })}
+            
+            {activityLogs.length === 0 && (
+              <div className="text-center py-10 px-4 text-slate-400 dark:text-slate-500">
+                <History size={32} className="mx-auto mb-2 opacity-40 text-slate-400" />
+                <p className="text-xs font-bold text-slate-600 dark:text-slate-400">Nenhum estudo registrado ainda.</p>
+                <p className="text-[11px] mt-1 text-slate-400">
+                  Registre suas sessões no cronômetro da página Planejamento ou adicione diretamente pelo gráfico semanal!
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Footer note when capped at 20 */}
+          {activityLogs.length > 20 && (
+            <div className="pt-2.5 mt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-[10.5px] text-slate-400 dark:text-slate-500">
+              <span>
+                {showAllActivities 
+                  ? `Mostrando todas as ${activityLogs.length} atividades registradas.`
+                  : `Mostrando as 20 mais recentes de ${activityLogs.length} atividades.`}
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowAllActivities(prev => !prev)}
+                className="font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
+              >
+                {showAllActivities ? 'Recolher para 20' : 'Ver todas'}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -2653,16 +3508,72 @@ export default function DashboardHome({
                 </div>
                 <div>
                   <label className="block text-[10px] font-black text-slate-400 dark:text-slate-500 mb-1 uppercase tracking-wider">
-                    Questões (Opcional)
+                    Questões Totais
                   </label>
                   <input 
                     type="number" 
                     min={0}
-                    value={adjustChartQuestions}
-                    onChange={(e) => setAdjustChartQuestions(Math.max(0, Number(e.target.value)))}
+                    value={adjustChartQuestions || (adjustChartCorrect + adjustChartWrong) || 0}
+                    onChange={(e) => {
+                      const val = Math.max(0, Number(e.target.value));
+                      setAdjustChartQuestions(val);
+                      if (val === 0) {
+                        setAdjustChartCorrect(0);
+                        setAdjustChartWrong(0);
+                      }
+                    }}
                     className="w-full px-3 py-2 bg-white dark:bg-slate-850 border border-slate-200 dark:border-slate-800 dark:text-white rounded-lg focus:outline-none focus:border-primary font-bold font-mono text-center"
                   />
                 </div>
+              </div>
+
+              {/* Acertos e Erros (Rendimento Diário no Gráfico) */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-850/70 rounded-xl border border-slate-200/80 dark:border-slate-800 space-y-2.5">
+                <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                  <span>Rendimento (Acertos & Erros)</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 text-[9px] font-black">
+                    Calcula % no Gráfico
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Acertos</label>
+                    <input 
+                      type="number" 
+                      min={0}
+                      value={adjustChartCorrect}
+                      onChange={(e) => {
+                        const val = Math.max(0, Number(e.target.value));
+                        setAdjustChartCorrect(val);
+                        setAdjustChartQuestions(val + adjustChartWrong);
+                      }}
+                      className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-emerald-600 dark:text-emerald-400 font-bold font-mono text-center text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-bold text-slate-500 dark:text-slate-400 block mb-1">Erros</label>
+                    <input 
+                      type="number" 
+                      min={0}
+                      value={adjustChartWrong}
+                      onChange={(e) => {
+                        const val = Math.max(0, Number(e.target.value));
+                        setAdjustChartWrong(val);
+                        setAdjustChartQuestions(adjustChartCorrect + val);
+                      }}
+                      className="w-full px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg text-rose-500 font-bold font-mono text-center text-xs"
+                    />
+                  </div>
+                </div>
+
+                {(adjustChartCorrect > 0 || adjustChartWrong > 0) && (
+                  <div className="pt-2 border-t border-slate-200/60 dark:border-slate-800 flex justify-between items-center text-[10px] font-bold">
+                    <span className="text-slate-400">Taxa de Acertos Calculada:</span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-mono font-black">
+                      🎯 {Math.round((adjustChartCorrect / (adjustChartCorrect + adjustChartWrong)) * 100)}% de acertos
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="p-3 bg-emerald-50/60 dark:bg-emerald-950/20 rounded-lg border border-emerald-100 dark:border-emerald-900/30 text-[10.5px] text-emerald-800 dark:text-emerald-300 leading-relaxed font-semibold">
@@ -2689,6 +3600,17 @@ export default function DashboardHome({
           </div>
         </div>
       )}
+
+      {/* Modal: All Studied Days History */}
+      <AllStudiedDaysModal
+        isOpen={showAllStudiedDaysModal}
+        onClose={() => setShowAllStudiedDaysModal(false)}
+        activityLogs={activityLogs}
+        regDate={regDate}
+        disciplines={disciplines}
+        currentStreak={streakCalc.currentStreak}
+        recordStreak={streakCalc.recordStreak}
+      />
 
     </div>
   );

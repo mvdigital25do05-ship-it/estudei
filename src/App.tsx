@@ -1628,6 +1628,7 @@ export default function App() {
               onToggleReminder={handleToggleReminder}
               onDeleteReminder={handleDeleteReminder}
               activityLogs={activityLogs}
+              exerciseLogs={exerciseLogs}
               onDeleteActivityLog={handleDeleteActivityLog}
               onUpdateDisciplineTime={handleUpdateDisciplineTime}
               onUpdateWeeklyGoals={handleUpdateWeeklyGoals}
