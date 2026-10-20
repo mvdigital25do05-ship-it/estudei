@@ -42,6 +42,7 @@ import SimuladosQuestoes from './components/SimuladosQuestoes';
 import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import AuthScreen from './components/AuthScreen';
+import BackupButton from './components/BackupButton';
 
 export default function App() {
   // Navigation active state
@@ -1523,6 +1524,8 @@ export default function App() {
                 )}
               </div>
             )}
+
+            <BackupButton />
 
             {/* Help Quick Reference button */}
             <button 
