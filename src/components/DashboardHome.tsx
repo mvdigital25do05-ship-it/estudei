@@ -35,6 +35,7 @@ import {
   CalendarCheck
 } from 'lucide-react';
 import AllStudiedDaysModal from './AllStudiedDaysModal';
+import StudyIntelligence from './StudyIntelligence';
 import { Discipline, Reminder, ActivityLog, StreakDay, ExerciseLog } from '../types';
 import { MOTIVATIONAL_QUOTES } from '../data';
 import { formatMinutes, formatHours, getLocalDateString, getLogDateKey } from '../utils';
@@ -981,6 +982,8 @@ export default function DashboardHome({
         </button>
       </div>
       
+      <StudyIntelligence disciplines={disciplines} exerciseLogs={exerciseLogs} activityLogs={activityLogs} />
+
       {/* 1. Upper Dynamic Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         
