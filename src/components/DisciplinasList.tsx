@@ -26,12 +26,14 @@ import {
   AlertTriangle,
   History,
   BarChart3,
-  Lightbulb
+  Lightbulb,
+  Download
 } from 'lucide-react';
 import { Discipline, Topic, ExerciseLog, ActivityLog, ExamPriority, LearningPhase } from '../types';
 import { buildTopicDiagnostics, PHASE_LABELS } from '../studyStrategy';
 import OutlineImportPanel from './OutlineImportPanel';
 import type { OutlineInput } from '../outlineImport';
+import { exportAnkiText } from '../ankiExport';
 import { formatMinutes } from '../utils';
 
 interface DisciplinasListProps {
@@ -96,6 +98,10 @@ export default function DisciplinasList({
   const [exFormDifficulty, setExFormDifficulty] = useState<'Baixa' | 'Média' | 'Alta'>('Média');
   const [exFormIsNewQuestions, setExFormIsNewQuestions] = useState(true);
   const [exFormBoard, setExFormBoard] = useState('Vunesp');
+  const [exFormCause, setExFormCause] = useState('');
+  const [exFormAnkiFront, setExFormAnkiFront] = useState('');
+  const [exFormAnkiBack, setExFormAnkiBack] = useState('');
+  const [ankiMessage, setAnkiMessage] = useState('');
 
   // Exercise log analytics card states
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<'logs' | 'difficulties' | 'mostPracticed' | 'evolution'>('logs');
@@ -321,6 +327,9 @@ export default function DisciplinasList({
     setExFormDifficulty('Média');
     setExFormIsNewQuestions(true);
     setExFormBoard('Vunesp');
+    setExFormCause('');
+    setExFormAnkiFront('');
+    setExFormAnkiBack('');
     setShowExerciseFormModal(true);
   };
 
@@ -371,6 +380,14 @@ export default function DisciplinasList({
       }
     }
 
+    if (Boolean(exFormAnkiFront.trim()) !== Boolean(exFormAnkiBack.trim())) {
+      alert('Preencha a frente e o verso do flashcard, ou deixe ambos em branco.');
+      return;
+    }
+    if (Number(exFormWrongAnswers) === 0 && (exFormAnkiFront.trim() || exFormAnkiBack.trim())) {
+      alert('O flashcard do caderno de erros deve estar associado a pelo menos um erro.');
+      return;
+    }
     const totalQuestions = Number(exFormCorrectAnswers) + Number(exFormWrongAnswers);
     const accuracy = totalQuestions > 0 ? Math.round((Number(exFormCorrectAnswers) / totalQuestions) * 100) : 0;
 
@@ -386,10 +403,34 @@ export default function DisciplinasList({
       notes: exFormNotes.trim(),
       difficulty: exFormDifficulty,
       isNewQuestions: exFormIsNewQuestions,
-      examBoard: exFormBoard.trim() || undefined
+      examBoard: exFormBoard.trim() || undefined,
+      errorCause: (exFormCause || undefined) as ExerciseLog['errorCause'],
+      ankiFront: exFormAnkiFront.trim(),
+      ankiBack: exFormAnkiBack.trim()
     }, exFormIsNewTopic);
 
     setShowExerciseFormModal(false);
+  };
+
+  const handleExportAnki = () => {
+    const deck = exportAnkiText(exerciseLogs);
+    if (!deck.count) {
+      setAnkiMessage('Nenhum flashcard completo foi cadastrado neste perfil.');
+      return;
+    }
+    const blob = new Blob(['\uFEFF', deck.text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    try {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'estudei-anki-' + new Date().toISOString().slice(0, 10) + '.txt';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setAnkiMessage(deck.count + ' flashcards preparados. No Anki, importe o arquivo de texto.');
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
   };
 
   const topicStats = React.useMemo(() => {
@@ -524,6 +565,15 @@ export default function DisciplinasList({
           
           <button
             type="button"
+            onClick={handleExportAnki}
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            title="Exportar flashcards dos erros registrados nas questões deste perfil"
+          >
+            <Download size={14} />
+            Exportar Anki
+          </button>
+          <button
+            type="button"
             onClick={() => setShowImportPanel(open => !open)}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
           >
@@ -544,6 +594,7 @@ export default function DisciplinasList({
       {showImportPanel && (
         <OutlineImportPanel disciplines={disciplines} onApply={onImportOutline} />
       )}
+      {ankiMessage && <p role="status" className="text-xs text-slate-600 dark:text-slate-300">{ankiMessage}</p>}
 
       {/* Bento Grid layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1135,6 +1186,46 @@ export default function DisciplinasList({
               <p className="text-[10px] text-slate-500 dark:text-slate-400">
                 Marque inéditas apenas se ainda não resolveu essas questões. Essa informação melhora o diagnóstico de domínio.
               </p>
+
+              {Number(exFormWrongAnswers) > 0 && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+                  <h4 className="text-xs font-extrabold text-slate-800 dark:text-white">Caderno de erros · Anki (opcional)</h4>
+                  <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                    Registre um conceito que causou erro neste bloco. Crie uma pergunta curta, não copie a questão inteira.
+                  </p>
+                  <label className="mt-2 block text-[10px] font-bold uppercase text-slate-500">
+                    Causa do erro
+                    <select
+                      value={exFormCause}
+                      onChange={event => setExFormCause(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    >
+                      <option value="">Não classificada</option>
+                      <option value="desconhecimento">Desconhecimento da regra</option>
+                      <option value="confusao">Confusão entre conceitos</option>
+                      <option value="interpretacao">Interpretação do enunciado</option>
+                      <option value="desatencao">Desatenção</option>
+                      <option value="tempo">Tempo insuficiente</option>
+                    </select>
+                  </label>
+                  <label className="mt-2 block text-[10px] font-bold uppercase text-slate-500">
+                    Frente (pergunta)
+                    <input type="text" maxLength={240} value={exFormAnkiFront}
+                      onChange={event => setExFormAnkiFront(event.target.value)}
+                      placeholder="Ex.: Como se contam os prazos processuais fixados em dias?"
+                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                  </label>
+                  <label className="mt-2 block text-[10px] font-bold uppercase text-slate-500">
+                    Verso (regra correta)
+                    <textarea rows={2} maxLength={300} value={exFormAnkiBack}
+                      onChange={event => setExFormAnkiBack(event.target.value)}
+                      placeholder="Ex.: Em regra, contam-se somente os dias úteis (art. 219, CPC)."
+                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                  </label>
+                </div>
+              )}
 
               {/* Observações / Dificuldades */}
               <div>
