@@ -173,3 +173,28 @@ Os novos registros devem ser armazenados em coleções separadas ou estrutura pa
 - `tests/backup.test.ts`: cobertura de erros, checksum, v1/v2, tentativas de backup parcial e registros órfãos.
 - `tests/sequentialWriter.test.ts`: ordem de envio, falhas de rede, isolamento entre documentos e espera antes de exclusão.
 - Ainda são necessários testes reais com autenticação, Firestore Emulator, duas abas/dispositivos e restauração simulada **antes** de qualquer integração ao ambiente de produção.
+
+## Etapa 10 e início da 11 — Prioridades revisáveis e dashboard visual
+
+### Dashboard por matéria (sem inferências indevidas)
+- `src/studyOverview.ts`: resumo da cobertura real dos tópicos, amostra suficiente (>=20 questões), taxa de acertos ponderada pela amostra, assuntos abaixo de 70%, tópicos com >=85% e classificação histórica preenchida.
+- `StudyIntelligence.tsx`: nova organização visual com resumo de 7 dias, cobertura, evidências, progresso por disciplina e fila de estudo filtrável (todas, urgência A, incidência A, sem classificação).
+- O botão **Estudar este tópico** abre diretamente o registro de estudo do assunto selecionado.
+- `TJSPExamDistribution.tsx`: distribuição de 70 questões do edital 02/2026 nos blocos **Português 16, Direito 30, Atualidades/LBI 4, Matemática 4, Informática 9, Raciocínio Lógico 7**, identificada expressamente como peso oficial do bloco, não previsão de incidência por artigo. O componente aparece apenas em planos identificados como TJSP/Escrevente.
+- Tópicos ainda não classificados permanecem visíveis, assim como matérias sem amostra de questões. O painel não preenche desempenho ou prioridades inexistentes.
+
+### Importação privada de evidências A/B/C do estudante
+- Foi localizado um planejamento pessoal A/B/C do usuário, mas **nenhum conteúdo de sua planilha foi publicado no repositório**.
+- `src/priorityEvidence.ts`: leitor seguro de tabelas CSV/TSV com colunas **Disciplina, ABC, Assunto**, e colunas opcionais **Recorte, Fundamento**; suporta campos entre aspas e apelidos de matérias, como `Processo Civil` -> `Direito Processual Civil`.
+- `PriorityEvidencePanel.tsx`: o estudante pode colar a aba **Mapa ABC** ou selecionar um arquivo CSV/TSV local (sem enviar a planilha ao GitHub).
+- **Vínculos automáticos somente para nomes idênticos normalizados.** Grupos amplos de artigos que misturam A/B/C não recebem nota arbitrária. Cada associação diferente precisa de escolha humana na interface.
+- Prévia conta prioridades alteradas e não alteradas; associação entre matérias diferentes e notas conflitantes é rejeitada.
+- A confirmação exige revisão humana e backup prévio. A função de atualização preserva os logs, progresso e identificadores de tópicos.
+- Ao salvar, `examPrioritySource` registra a origem informada. As notas A/B/C são recomendações editoriais, não uma classificação oficial do edital.
+- `tests/studyOverview.test.ts` e `tests/priorityEvidence.test.ts` cobrem agregação, ausência de evidências, correspondência exata, conflito, idempotência e preservação.
+
+### Próximas verificações
+- Testes visuais de responsividade, legibilidade e navegação por teclado.
+- Homologação real isolada do Firebase e persistência das classificações após recarga.
+- Conferir retificações do edital e a compatibilidade de cada recorte ao vincular a planilha.
+- Avaliar modelo de conflitos entre múltiplas abas antes da publicação.
