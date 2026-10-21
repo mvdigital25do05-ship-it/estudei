@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { ActivityLog, Discipline, ExerciseLog } from '../types';
-import { formatMinutes, getLocalDateString, getLogDateKey } from '../utils';
+import { formatMinutes, getLocalDateString, getLogDateKey, formatTopicName } from '../utils';
 import { BarChart3, BookOpenCheck, CalendarDays, Target } from 'lucide-react';
 
 interface StudyIntelligenceProps {
@@ -156,7 +156,7 @@ export default function StudyIntelligence({ disciplines, exerciseLogs, activityL
               {insights.weakTopics.map((topic) => (
                 <div key={`${topic.disciplineName}-${topic.name}`} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/70">
                   <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">{topic.disciplineName}</p>
-                  <p className="mt-1 text-xs font-bold text-slate-800 dark:text-white">{topic.name}</p>
+                  <p className="mt-1 text-xs font-bold text-slate-800 dark:text-white">{formatTopicName(topic.name)}</p>
                   <p className="mt-1 text-[11px] text-rose-600 dark:text-rose-400">
                     {topic.wrong} erros de {topic.total} questões · {Math.round((topic.correct / topic.total) * 100)}% de acerto
                   </p>

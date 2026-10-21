@@ -38,7 +38,7 @@ import AllStudiedDaysModal from './AllStudiedDaysModal';
 import StudyIntelligence from './StudyIntelligence';
 import { Discipline, Reminder, ActivityLog, StreakDay, ExerciseLog } from '../types';
 import { MOTIVATIONAL_QUOTES } from '../data';
-import { formatMinutes, formatHours, getLocalDateString, getLogDateKey } from '../utils';
+import { formatMinutes, formatHours, getLocalDateString, getLogDateKey, formatTopicName } from '../utils';
 
 interface DashboardHomeProps {
   disciplines: Discipline[];
@@ -1823,8 +1823,8 @@ export default function DashboardHome({
                       return (
                         <div key={idx} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 bg-white dark:bg-slate-800 border border-slate-200/60 dark:border-slate-700 rounded-lg gap-3">
                           <div className="flex flex-col min-w-0">
-                            <span className="font-bold text-xs text-slate-800 dark:text-white truncate" title={stat.topicName}>
-                              {stat.topicName || 'Tópico Geral'}
+                            <span className="font-bold text-xs text-slate-800 dark:text-white truncate" title={formatTopicName(stat.topicName)}>
+                              {formatTopicName(stat.topicName) || 'Tópico Geral'}
                             </span>
                             <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider truncate">
                               {stat.disciplineName}
@@ -3007,7 +3007,7 @@ export default function DashboardHome({
                     >
                       <option value="">Geral / Sem Tópico Específico</option>
                       {disciplines.find(d => d.id === studyDisciplineId)?.topics.map(t => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
+                        <option key={t.id} value={t.id}>{formatTopicName(t.name)}</option>
                       ))}
                     </select>
                   </div>

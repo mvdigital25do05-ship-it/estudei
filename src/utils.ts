@@ -1,8 +1,14 @@
-/**
- * Helper to format minutes into a standard hours and minutes display style.
- * - Under 60 mins: "X min"
- * - 60 mins and over: "Xh YYmin" (minutes padded to 2 digits if single digit: "2h 05min")
- */
+/** Remove checklist labels for display while preserving the original topic and its ID. */
+export function formatTopicName(name: string): string {
+  return name
+    .replace(/^\s*\[[ABC]\]\s*/i, '')
+    .replace(/^\s*(?:LP|DPP|DPC|DP|DC|DA|LI|AT|MAT|INF|RL|RED)-\d{3}\s*(?:[—–-]\s*)?/i, '')
+    .replace(/^\s*\d+\s*[.)-]\s*/, '')
+    .replace(/\s*\(grupo:\s*(?:[A-Z]+-\d{3}[,\s]*)+\)\s*$/i, '')
+    .trim();
+}
+
+/** Format minutes as minutes or hours and minutes. */
 export function formatMinutes(totalMinutes: number): string {
   const rounded = Math.round(totalMinutes);
   if (rounded < 60) {

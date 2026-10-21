@@ -29,7 +29,7 @@ import {
   Lightbulb
 } from 'lucide-react';
 import { Discipline, Topic, ExerciseLog, ActivityLog } from '../types';
-import { formatMinutes } from '../utils';
+import { formatMinutes, formatTopicName } from '../utils';
 
 interface DisciplinasListProps {
   disciplines: Discipline[];
@@ -674,7 +674,7 @@ export default function DisciplinasList({
                           </div>
                           
                           <p className="font-sans font-bold text-xs text-slate-800 dark:text-white leading-snug">
-                            {log.topicName}
+                            {formatTopicName(log.topicName)}
                           </p>
 
                           {log.notes && (
@@ -740,7 +740,7 @@ export default function DisciplinasList({
                             <span className="text-[9px] font-black tracking-wider text-slate-400 uppercase">
                               {stat.disciplineName}
                             </span>
-                            <h5 className="text-xs font-bold text-slate-800 dark:text-white truncate leading-snug">{stat.topicName}</h5>
+                            <h5 className="text-xs font-bold text-slate-800 dark:text-white truncate leading-snug">{formatTopicName(stat.topicName)}</h5>
                           </div>
                           
                           <div className="text-[11px] text-slate-500 dark:text-slate-400 font-bold shrink-0 self-end sm:self-center font-mono">
@@ -802,7 +802,7 @@ export default function DisciplinasList({
                             <span className="font-mono font-black text-xs text-rose-600 dark:text-rose-400">{stat.accuracyPercent}% acertos</span>
                           </div>
                           
-                          <h5 className="font-bold text-xs text-slate-800 dark:text-white leading-snug">{stat.topicName}</h5>
+                          <h5 className="font-bold text-xs text-slate-800 dark:text-white leading-snug">{formatTopicName(stat.topicName)}</h5>
                           <p className="text-[10px] text-slate-450 dark:text-slate-400 mt-1 font-bold uppercase">{stat.disciplineName}</p>
                         </div>
 
@@ -852,7 +852,7 @@ export default function DisciplinasList({
                             <div className="flex flex-col sm:flex-row justify-between items-start gap-2 bg-slate-50 dark:bg-slate-855 p-3 rounded-xl border border-slate-100 dark:border-slate-800/80">
                               <div>
                                 <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider font-mono">{log.date}</span>
-                                <h5 className="font-bold text-xs text-slate-800 dark:text-white leading-snug mt-0.5">{log.topicName}</h5>
+                                <h5 className="font-bold text-xs text-slate-800 dark:text-white leading-snug mt-0.5">{formatTopicName(log.topicName)}</h5>
                                 <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">{log.disciplineName}</p>
                               </div>
 
@@ -964,7 +964,7 @@ export default function DisciplinasList({
                       required
                     >
                       {disciplines.find(d => d.id === exFormDisciplineId)?.topics.map(t => (
-                        <option key={t.id} value={t.id}>{t.name}</option>
+                        <option key={t.id} value={t.id}>{formatTopicName(t.name)}</option>
                       ))}
                       <option value="custom">+ Cadastrar Novo Tópico...</option>
                     </select>
@@ -1368,7 +1368,7 @@ export default function DisciplinasList({
                                   />
                                 ) : (
                                   <span className={`text-xs font-semibold truncate ${topic.completed ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>
-                                    {topic.name}
+                                    {formatTopicName(topic.name)}
                                   </span>
                                 )}
                               </div>
@@ -1425,7 +1425,7 @@ export default function DisciplinasList({
                                   </button>
                                   <button 
                                     type="button" 
-                                    onClick={() => handleStartEditTopic(topic.id, topic.name)}
+                                    onClick={() => handleStartEditTopic(topic.id, formatTopicName(topic.name))}
                                     className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-50 rounded opacity-0 group-hover/topic:opacity-100 transition-all cursor-pointer"
                                     title="Editar Tópico"
                                   >
@@ -1457,7 +1457,7 @@ export default function DisciplinasList({
                                       className="w-3 h-3 rounded text-primary border-slate-300 focus:ring-primary cursor-pointer shrink-0"
                                     />
                                     <span className={`text-[11px] truncate ${subtopic.completed ? 'text-slate-400 line-through' : 'text-slate-600'}`}>
-                                      {subtopic.name}
+                                      {formatTopicName(subtopic.name)}
                                     </span>
                                   </div>
                                   <button 
@@ -1565,7 +1565,7 @@ export default function DisciplinasList({
                     {exerciseLogs.filter(log => log.disciplineId === activeDiscipline.id).map((log) => (
                       <div key={log.id} className="p-2.5 bg-slate-50 dark:bg-slate-850/50 border border-slate-100 dark:border-slate-800 rounded-lg space-y-1 text-[11px]">
                         <div className="flex justify-between font-bold">
-                          <span className="text-slate-800 dark:text-slate-200 truncate pr-2">{log.topicName}</span>
+                          <span className="text-slate-800 dark:text-slate-200 truncate pr-2">{formatTopicName(log.topicName)}</span>
                           <span className="shrink-0 text-slate-400 font-mono text-[10px]">{log.date}</span>
                         </div>
                         <div className="flex justify-between text-[10px] text-slate-500">
