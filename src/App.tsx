@@ -46,6 +46,7 @@ import BackupButton from './components/BackupButton';
 import ErrorNotebook from './components/ErrorNotebook';
 import { previewOutlineMerge, type OutlineInput } from './outlineImport';
 import { createSequentialWriter } from './sequentialWriter';
+import { captureProfileSnapshot } from './profilePersistence';
 
 export default function App() {
   // Navigation active state
@@ -96,6 +97,7 @@ export default function App() {
   const pendingWritesRef = useRef(0);
   // A deleted profile must never be silently recreated by a late autosave.
   const deletedProfileIdsRef = useRef(new Set<string>());
+  const profileSwitchInProgressRef = useRef(false);
 
   const beginSave = () => {
     pendingWritesRef.current++;
@@ -419,24 +421,60 @@ export default function App() {
   };
 
   // 6. Switch study configurations active tab
-  const handleSwitchProfile = (id: string) => {
+  const handleSwitchProfile = async (id: string) => {
+    if (profileSwitchInProgressRef.current || id === activeProfileId) return;
     const target = profiles.find(p => p.id === id);
-    if (!target) return;
+    if (!target || !user || deletedProfileIdsRef.current.has(id)) return;
+    const previous = profiles.find(p => p.id === activeProfileId);
+    if (!previous && activeProfileId) {
+      setSaveStatus('error');
+      setSaveErrorMsg('O plano atual não foi encontrado. Recarregue os dados antes de trocar.');
+      return;
+    }
 
-    // Direct state hydration
+    profileSwitchInProgressRef.current = true;
+    if (previous) {
+      const snapshot = captureProfileSnapshot(previous, {
+        disciplines, mockTests, exerciseLogs, activityLogs, studyBlocks,
+        weeklyHours, weeklyQuestions, weeklyReviews, examDate, examName,
+      });
+
+      // Keep recent edits even if the debounce timer has not fired yet.
+      setProfiles(current => current.map(plan => plan.id === snapshot.id ? snapshot : plan));
+      beginSave();
+      let failed = false;
+      try {
+        await saveQueueRef.current.enqueue(`profiles/${user.uid}/${snapshot.id}`, () =>
+          setDoc(doc(db, 'users', user.uid, 'profiles', snapshot.id),
+            sanitizeForFirestore(snapshot), { merge: true })
+        );
+      } catch (cause) {
+        failed = true;
+        setSaveErrorMsg(cause instanceof Error ? cause.message : String(cause));
+        console.error('Troca de plano bloqueada: não foi possível persistir a origem.', cause);
+      } finally {
+        finishSave(failed);
+        if (failed) {
+          profileSwitchInProgressRef.current = false;
+          return;
+        }
+      }
+    }
+
+    // The source plan has finished saving. Hydrate the destination atomically
+    // as a React batch to avoid applying source state to the destination ID.
     setDisciplines(target.disciplines || []);
     setMockTests(target.mockTests || []);
     setExerciseLogs(target.exerciseLogs || []);
     setActivityLogs(target.activityLogs || []);
     setStudyBlocks(target.studyBlocks || []);
-    setWeeklyHours(target.weeklyHours || { done: 18, total: 30 });
-    setWeeklyQuestions(target.weeklyQuestions || { done: 320, total: 500 });
-    setWeeklyReviews(target.weeklyReviews || { done: 65, total: 100 });
+    setWeeklyHours(target.weeklyHours || { done: 0, total: 24 });
+    setWeeklyQuestions(target.weeklyQuestions || { done: 0, total: 300 });
+    setWeeklyReviews(target.weeklyReviews || { done: 0, total: 60 });
     setExamDate(target.examDate || '');
     setExamName(target.examName || '');
-    
-    // Switch state directly
     setActiveProfileId(id);
+    profileSwitchInProgressRef.current = false;
   };
 
   const handleCreateProfile = (name: string, templateType: string, initialDisciplines?: Discipline[]) => {
