@@ -40,4 +40,4 @@ jobs:
           --config firebase.emulator.json
           --project demo-estudei-tjsp
           --only firestore
-          'node --test tests/firestore.rules.emulator.test.mjs'
+          'node --import tsx --test tests/firestore.rules.emulator.test.mjs'
