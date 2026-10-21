@@ -1,6 +1,6 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import App from './App.tsx';
+// Load the authenticated app only outside the synthetic UI fixture.
 import './index.css';
 
 const root = createRoot(document.getElementById('root')!);
@@ -14,5 +14,7 @@ if (import.meta.env.DEV &&
     root.render(<StrictMode><UiTestHarness/></StrictMode>);
   });
 } else {
-  root.render(<StrictMode><App/></StrictMode>);
+  void import('./App.tsx').then(({default:App}) => {
+    root.render(<StrictMode><App/></StrictMode>);
+  });
 }
