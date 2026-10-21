@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { CargoPlan, Discipline, Topic } from '../types';
 import { formatMinutes, formatTopicName } from '../utils';
+import { getStudyTopics } from '../studyOrder';
 
 interface PlanosManagerProps {
   profiles: CargoPlan[];
@@ -532,7 +533,7 @@ export default function PlanosManager({
                             {d.name}
                           </div>
                           <div className="text-[10px] text-slate-400 font-medium truncate mt-0.5">
-                            Tópicos ({d.topics.length}): {d.topics.map(t => formatTopicName(t.name)).join(', ') || 'Nenhum'}
+                            Tópicos ({d.topics.length}): {getStudyTopics(d).map(t => formatTopicName(t.name)).join(', ') || 'Nenhum'}
                           </div>
                         </div>
                         <button

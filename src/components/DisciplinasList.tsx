@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { Discipline, Topic, ExerciseLog, ActivityLog } from '../types';
 import { formatMinutes, formatTopicName } from '../utils';
+import { getStudyTopics, hasRecommendedStudyOrder } from '../studyOrder';
 
 interface DisciplinasListProps {
   disciplines: Discipline[];
@@ -268,7 +269,7 @@ export default function DisciplinasList({
     
     const disc = disciplines.find(d => d.id === selectedDiscId);
     if (disc && disc.topics.length > 0) {
-      setExFormTopicId(disc.topics[0].id);
+      setExFormTopicId(getStudyTopics(disc)[0].id);
       setExFormIsNewTopic(false);
     } else {
       setExFormTopicId('custom');
@@ -287,7 +288,7 @@ export default function DisciplinasList({
     setExFormDisciplineId(discId);
     const disc = disciplines.find(d => d.id === discId);
     if (disc && disc.topics.length > 0) {
-      setExFormTopicId(disc.topics[0].id);
+      setExFormTopicId(getStudyTopics(disc)[0].id);
       setExFormIsNewTopic(false);
     } else {
       setExFormTopicId('custom');
@@ -934,7 +935,7 @@ export default function DisciplinasList({
                         } else {
                           const disc = disciplines.find(d => d.id === exFormDisciplineId);
                           if (disc && disc.topics.length > 0) {
-                            setExFormTopicId(disc.topics[0].id);
+                            setExFormTopicId(getStudyTopics(disc)[0].id);
                           } else {
                             setExFormTopicId('custom');
                             setExFormIsNewTopic(true);
@@ -963,7 +964,7 @@ export default function DisciplinasList({
                       className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 dark:text-white rounded-lg focus:outline-none focus:border-primary font-semibold text-slate-800 animate-fade-in"
                       required
                     >
-                      {disciplines.find(d => d.id === exFormDisciplineId)?.topics.map(t => (
+                      {getStudyTopics(disciplines.find(d => d.id === exFormDisciplineId)).map(t => (
                         <option key={t.id} value={t.id}>{formatTopicName(t.name)}</option>
                       ))}
                       <option value="custom">+ Cadastrar Novo Tópico...</option>
@@ -1296,7 +1297,12 @@ export default function DisciplinasList({
 
               {/* Interactive Topics Checklist Section */}
               <div className="space-y-2">
-                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">Lista Customizada de Tópicos</label>
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">
+                  {hasRecommendedStudyOrder(activeDiscipline) ? 'Ordem recomendada de estudo' : 'Lista Customizada de Tópicos'}
+                </label>
+                {hasRecommendedStudyOrder(activeDiscipline) && <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Sequência provisória que combina prioridades de conteúdo e pré-requisitos. Tópicos concluídos continuam marcados.
+                </p>}
                 
                 {/* Add dynamic topic form */}
                 <div className="flex gap-2">
@@ -1325,7 +1331,7 @@ export default function DisciplinasList({
                 {/* Topics scroll area */}
                 {activeDiscipline.topics && activeDiscipline.topics.length > 0 ? (
                   <div className="bg-slate-50 border border-slate-100 p-2 rounded-xl max-h-[285px] overflow-y-auto space-y-1.5">
-                    {activeDiscipline.topics.map((topic) => {
+                    {getStudyTopics(activeDiscipline).map((topic) => {
                       const topicExerciseLogs = exerciseLogs.filter(log => log.topicId === topic.id);
                       const totalTopicCorrect = topicExerciseLogs.reduce((acc, curr) => acc + curr.correctAnswers, 0);
                       const totalTopicWrong = topicExerciseLogs.reduce((acc, curr) => acc + curr.wrongAnswers, 0);
@@ -1590,7 +1596,7 @@ export default function DisciplinasList({
               </div>
 
               <div className="text-[10px] text-slate-400 font-bold text-center leading-relaxed italic">
-                "O progresso nesta matéria representa {activeDiscipline.topicsTotal > 0 ? Math.round((activeDiscipline.topicsDone / activeDiscipline.topicsTotal) * 100) : 0}% de conclusão do edital teórico para o concurso da Polícia Federal."
+                O progresso nesta matéria representa {activeDiscipline.topicsTotal > 0 ? Math.round((activeDiscipline.topicsDone / activeDiscipline.topicsTotal) * 100) : 0}% dos tópicos cadastrados neste cargo.
               </div>
 
               <button 

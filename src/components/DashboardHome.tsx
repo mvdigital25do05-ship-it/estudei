@@ -39,6 +39,7 @@ import StudyIntelligence from './StudyIntelligence';
 import { Discipline, Reminder, ActivityLog, StreakDay, ExerciseLog } from '../types';
 import { MOTIVATIONAL_QUOTES } from '../data';
 import { formatMinutes, formatHours, getLocalDateString, getLogDateKey, formatTopicName } from '../utils';
+import { getStudyTopics } from '../studyOrder';
 
 interface DashboardHomeProps {
   disciplines: Discipline[];
@@ -429,7 +430,7 @@ export default function DashboardHome({
     setStudyConcludeTopic(false);
     const disc = disciplines.find(d => d.id === id);
     if (disc && disc.topics.length > 0) {
-      setStudyTopicId(disc.topics[0].id);
+      setStudyTopicId(getStudyTopics(disc)[0].id);
     } else {
       setStudyTopicId('');
     }
@@ -970,7 +971,7 @@ export default function DashboardHome({
             if (firstDisc) {
               setStudyDisciplineId(firstDisc.id);
               if (firstDisc.topics.length > 0) {
-                setStudyTopicId(firstDisc.topics[0].id);
+                setStudyTopicId(getStudyTopics(firstDisc)[0].id);
               }
             }
             setShowAddStudyModal(true);
@@ -3006,7 +3007,7 @@ export default function DashboardHome({
                       className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 dark:text-white rounded-lg focus:outline-none focus:border-primary font-bold text-slate-700 dark:text-slate-200"
                     >
                       <option value="">Geral / Sem Tópico Específico</option>
-                      {disciplines.find(d => d.id === studyDisciplineId)?.topics.map(t => (
+                      {getStudyTopics(disciplines.find(d => d.id === studyDisciplineId)).map(t => (
                         <option key={t.id} value={t.id}>{formatTopicName(t.name)}</option>
                       ))}
                     </select>
