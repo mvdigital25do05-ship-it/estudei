@@ -30,6 +30,8 @@ import {
 } from 'lucide-react';
 import { Discipline, Topic, ExerciseLog, ActivityLog, ExamPriority, LearningPhase } from '../types';
 import { buildTopicDiagnostics, PHASE_LABELS } from '../studyStrategy';
+import OutlineImportPanel from './OutlineImportPanel';
+import type { OutlineInput } from '../outlineImport';
 import { formatMinutes } from '../utils';
 
 interface DisciplinasListProps {
@@ -37,6 +39,7 @@ interface DisciplinasListProps {
   onAddDiscipline: (d: Omit<Discipline, 'id'>) => void;
   onDeleteDiscipline: (id: string) => void;
   onUpdateDiscipline: (d: Discipline) => void;
+  onImportOutline: (outline: OutlineInput) => void;
   exerciseLogs: ExerciseLog[];
   activityLogs?: ActivityLog[];
   onAddExerciseLog: (log: Omit<ExerciseLog, 'id' | 'date'>, shouldCreateTopic?: boolean) => void;
@@ -59,6 +62,7 @@ export default function DisciplinasList({
   onAddDiscipline, 
   onDeleteDiscipline, 
   onUpdateDiscipline,
+  onImportOutline,
   exerciseLogs,
   activityLogs = [],
   onAddExerciseLog,
@@ -68,6 +72,7 @@ export default function DisciplinasList({
 }: DisciplinasListProps) {
   const [filter, setFilter] = useState('Todas');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportPanel, setShowImportPanel] = useState(false);
 
   React.useEffect(() => {
     if (autoOpenAddModal) {
@@ -511,6 +516,14 @@ export default function DisciplinasList({
             <option value="Não Iniciadas">Não Iniciadas</option>
           </select>
           
+          <button
+            type="button"
+            onClick={() => setShowImportPanel(open => !open)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+          >
+            {showImportPanel ? 'Fechar importação' : 'Importar edital'}
+          </button>
+
           <button 
             type="button"
             onClick={() => setShowAddModal(true)}
@@ -521,6 +534,10 @@ export default function DisciplinasList({
           </button>
         </div>
       </div>
+
+      {showImportPanel && (
+        <OutlineImportPanel disciplines={disciplines} onApply={onImportOutline} />
+      )}
 
       {/* Bento Grid layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
