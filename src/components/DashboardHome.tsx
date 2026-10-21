@@ -42,6 +42,7 @@ import { formatMinutes, formatHours, getLocalDateString, getLogDateKey, formatTo
 import { getStudyTopics } from '../studyOrder';
 import StudyTopicOptions from './StudyTopicOptions';
 import { getMainTopicProgress } from '../topicGroups';
+import { StudySuggestion } from '../studyGuidance';
 
 interface DashboardHomeProps {
   disciplines: Discipline[];
@@ -440,12 +441,21 @@ export default function DashboardHome({
 
   const handleTypeChange = (type: 'Teoria' | 'Questões' | 'Revisão' | 'Simulado') => {
     setStudyType(type);
-    if (type === 'Questões' || type === 'Simulado') {
-      if (studyCorrect === 0 && studyWrong === 0) {
-        setStudyCorrect(10);
-        setStudyWrong(2);
-      }
-    }
+  };
+
+  const prepareSuggestedSession = (suggestion: StudySuggestion) => {
+    setStudyDisciplineId(suggestion.disciplineId);
+    setStudyTopicId(suggestion.topicId);
+    setStudyType(suggestion.sessionType);
+    setStudyConcludeTopic(false);
+    setStudyHours(0);
+    setStudyMinutes(0);
+    setStudyCorrect(0);
+    setStudyWrong(0);
+    setStudyMaterial('PDF');
+    setStudyNotes('');
+    setStudyDate(getTodayDateString());
+    setShowAddStudyModal(true);
   };
 
   const submitStudySession = (e: React.FormEvent) => {
@@ -986,8 +996,6 @@ export default function DashboardHome({
         </button>
       </div>
       
-      <StudyIntelligence disciplines={disciplines} exerciseLogs={exerciseLogs} activityLogs={activityLogs} />
-
       {/* 1. Upper Dynamic Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         
@@ -2874,6 +2882,8 @@ export default function DashboardHome({
         </div>
       </div>
 
+      <StudyIntelligence disciplines={disciplines} exerciseLogs={exerciseLogs} activityLogs={activityLogs} onStart={prepareSuggestedSession} />
+
       {/* Reminder Addition Modal */}
       {showAddReminderModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
@@ -3131,7 +3141,7 @@ export default function DashboardHome({
               <div className="p-3 bg-slate-50 dark:bg-slate-850 rounded-xl border border-slate-150 dark:border-slate-800 space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Rendimento (Questões Resolvidas)</span>
-                  {(studyType === 'Questões' || studyType === 'Simulado') && (
+                  {(studyType === 'Questões' || studyType === 'Simulado' || studyType === 'Revisão') && (
                     <span className="text-[8px] bg-emerald-55/10 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-0.5 rounded font-black uppercase tracking-wider">Recomendado</span>
                   )}
                 </div>

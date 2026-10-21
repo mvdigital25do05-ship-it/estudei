@@ -1328,7 +1328,7 @@ export default function App() {
     // 4. Create an ExerciseLog entry if questions were solved
     const totalQuestions = (session.correct || 0) + (session.wrong || 0);
     if (totalQuestions > 0) {
-      const today = new Date();
+      const today = new Date(logDate + 'T12:00:00');
       const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
       const formattedDate = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
 
