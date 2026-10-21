@@ -10,7 +10,8 @@ import {
   BookOpen, 
   FileText, 
   Calendar, 
-  RefreshCw, 
+  RefreshCw,
+  NotebookPen, 
   HelpCircle,
   LogOut,
   Settings,
@@ -33,6 +34,7 @@ export default function Sidebar({ activeTab, setActiveTab, isOpen, setIsOpen, on
     { id: 'planos', label: 'Planos', icon: FileText },
     { id: 'disciplinas', label: 'Disciplinas', icon: BookOpen },
     { id: 'planejamento', label: 'Planejamento', icon: Calendar },
+    { id: 'erros', label: 'Caderno de Erros', icon: NotebookPen },
     { id: 'revisoes', label: 'Revisões', icon: RefreshCw, disabled: true },
     { id: 'simulados', label: 'Simulados', icon: GraduationCap },
   ];
