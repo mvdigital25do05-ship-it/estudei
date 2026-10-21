@@ -94,6 +94,8 @@ export default function DisciplinasList({
   const [exFormWrongAnswers, setExFormWrongAnswers] = useState(2);
   const [exFormNotes, setExFormNotes] = useState('');
   const [exFormDifficulty, setExFormDifficulty] = useState<'Baixa' | 'Média' | 'Alta'>('Média');
+  const [exFormIsNewQuestions, setExFormIsNewQuestions] = useState(true);
+  const [exFormBoard, setExFormBoard] = useState('Vunesp');
 
   // Exercise log analytics card states
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<'logs' | 'difficulties' | 'mostPracticed' | 'evolution'>('logs');
@@ -317,6 +319,8 @@ export default function DisciplinasList({
     setExFormWrongAnswers(2);
     setExFormNotes('');
     setExFormDifficulty('Média');
+    setExFormIsNewQuestions(true);
+    setExFormBoard('Vunesp');
     setShowExerciseFormModal(true);
   };
 
@@ -380,7 +384,9 @@ export default function DisciplinasList({
       correctAnswers: Number(exFormCorrectAnswers),
       wrongAnswers: Number(exFormWrongAnswers),
       notes: exFormNotes.trim(),
-      difficulty: exFormDifficulty
+      difficulty: exFormDifficulty,
+      isNewQuestions: exFormIsNewQuestions,
+      examBoard: exFormBoard.trim() || undefined
     }, exFormIsNewTopic);
 
     setShowExerciseFormModal(false);
@@ -1107,6 +1113,28 @@ export default function DisciplinasList({
                   />
                 </div>
               </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                  Banca
+                  <input
+                    type="text"
+                    maxLength={60}
+                    value={exFormBoard}
+                    onChange={event => setExFormBoard(event.target.value)}
+                    placeholder="Vunesp"
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-xs font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </label>
+                <label className="flex items-center gap-2 self-end rounded-lg bg-slate-50 p-3 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <input type="checkbox" checked={exFormIsNewQuestions}
+                    onChange={event => setExFormIsNewQuestions(event.target.checked)} />
+                  Questões inéditas para mim
+                </label>
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                Marque inéditas apenas se ainda não resolveu essas questões. Essa informação melhora o diagnóstico de domínio.
+              </p>
 
               {/* Observações / Dificuldades */}
               <div>
