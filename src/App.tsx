@@ -43,6 +43,7 @@ import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/fi
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import AuthScreen from './components/AuthScreen';
 import BackupButton from './components/BackupButton';
+import ErrorNotebook from './components/ErrorNotebook';
 import { previewOutlineMerge, type OutlineInput } from './outlineImport';
 
 export default function App() {
@@ -1680,6 +1681,16 @@ export default function App() {
               autoOpenAddModal={autoOpenAddDiscipline}
               onResetAutoOpen={() => setAutoOpenAddDiscipline(false)}
             />
+          )}
+
+          {activeTab === 'erros' && (
+            activeProfileId ? (
+              <ErrorNotebook key={activeProfileId} profileId={activeProfileId} disciplines={disciplines} />
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">
+                Crie ou selecione um plano de estudos para utilizar o caderno de erros.
+              </div>
+            )
           )}
 
           {activeTab === 'planejamento' && (
