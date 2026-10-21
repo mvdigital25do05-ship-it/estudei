@@ -17,6 +17,8 @@ Verifica:
 7. Campos imutáveis não podem ser substituídos;
 8. E-mail da conta e ID do plano não podem ser adulterados;
 9. Caminhos não previstos permanecem privados.
+10. Backup JSON v3 gerado por leitura efetiva do Firestore Emulator
+    inclui o caderno individual e valida o SHA-256 sem acessar produção.
 
 Os testes são independentes dos 48 testes unitários e da compilação
 do aplicativo. A execução é feita pelo workflow
@@ -70,6 +72,15 @@ Exigências antes de publicar:
 A presença de `firestore.rules` no GitHub não equivale a implantar as
 regras. Não executar comandos de deploy sobre banco real sem confirmação
 do ID do projeto, ID do banco, backup e autorização explícita.
+
+## Ensaio de exportação de backup com dados simulados
+
+O sétimo caso de integração lê a conta fictícia, o perfil e a subcoleção
+de erros do emulador, monta `createBackup()` e confere `inspectBackup()`.
+Garante que o backup v3 contém o cartão e tem checksum verificado.
+
+Isso **não** representa recuperação/restauração de backup em conta real
+nem um teste do banco nomeado de produção.
 
 ## Critérios de aceite
 
