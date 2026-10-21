@@ -209,8 +209,8 @@ export function previewOutlineMerge(existing: Discipline[], input: OutlineInput)
           completed: false,
         };
         topic.subtopics = [...(topic.subtopics || []), sub];
-        // A newly added pending subtopic means the topic is not fully covered.
-        topic.completed = false;
+        // Do not silently erase a topic's prior completion status. The new
+        // subtopic starts pending and can be reviewed individually.
         stats.newSubtopics++;
       }
     } else if (sameTopics.length > 0 && !row.priority) {
