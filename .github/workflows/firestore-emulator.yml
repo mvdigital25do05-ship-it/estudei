@@ -32,7 +32,7 @@ jobs:
       - name: Instalar dependências da aplicação
         run: npm ci
       - name: Instalar dependências exclusivas de testes
-        run: npm install --no-save --package-lock=false @firebase/rules-unit-testing@5.0.2 firebase-tools@14.27.0
+        run: npm install --no-save --package-lock=false @firebase/rules-unit-testing@5.0.2 firebase-tools@15.17.0
       - name: Testar negação de acesso no banco nomeado do emulador
         env:
           CI: 'true'
