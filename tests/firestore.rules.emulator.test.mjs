@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { after, before, beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
-import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, getDoc, getDocs, runTransaction, setDoc, updateDoc } from 'firebase/firestore';
 import { createBackup, inspectBackup } from '../src/backup.ts';
 import { prepareRecovery } from '../src/backupRecovery.ts';
 import { restoreBackupAtomically } from '../src/atomicRecovery.ts';
@@ -240,4 +240,26 @@ test('nota sem perfil pai continua proibida mesmo com regra existsAfter', async 
     doc(owner,'users/alice/profiles/uncreated/errors/orphan'),
     errorNote('orphan','uncreated')
   ));
+});
+
+test('falha de validação em um erro desfaz também o plano criado na mesma transação', async () => {
+  const own=await setupUser('alice','tjsp');
+  const destination=doc(own,'users/alice/profiles/rollback_check');
+  const invalidNote=doc(destination,'errors','bad1');
+
+  await assertFails(runTransaction(own,async transaction => {
+    const snap=await transaction.get(destination);
+    assert.equal(snap.exists(),false);
+    transaction.set(destination,profile('rollback_check'));
+    transaction.set(invalidNote,{
+      ...errorNote('bad1','rollback_check'),
+      front:'x'.repeat(501), // Invalid according to Firestore rules.
+    });
+  }));
+
+  const [result,notes]=await Promise.all([
+    getDoc(destination),getDocs(collection(destination,'errors')),
+  ]);
+  assert.equal(result.exists(),false);
+  assert.equal(notes.size,0);
 });
