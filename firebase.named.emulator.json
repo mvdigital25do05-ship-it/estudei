@@ -1,8 +1,14 @@
 {
-  "firestore": {
-    "database": "ai-studio-7d8a575c-71e3-4ced-b717-0af5fd6b9a13",
-    "rules": "firestore.rules"
-  },
+  "firestore": [
+    {
+      "database": "(default)",
+      "rules": "firestore.rules"
+    },
+    {
+      "database": "ai-studio-7d8a575c-71e3-4ced-b717-0af5fd6b9a13",
+      "rules": "firestore.rules"
+    }
+  ],
   "emulators": {
     "firestore": {
       "host": "127.0.0.1",
