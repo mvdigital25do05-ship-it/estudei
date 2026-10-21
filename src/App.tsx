@@ -45,6 +45,7 @@ import AuthScreen from './components/AuthScreen';
 import BackupButton from './components/BackupButton';
 import ErrorNotebook from './components/ErrorNotebook';
 import { previewOutlineMerge, type OutlineInput } from './outlineImport';
+import { previewPriorityAssignments, type PriorityAssignment, type PriorityEvidenceImport } from './priorityEvidence';
 import { createSequentialWriter } from './sequentialWriter';
 import { captureProfileSnapshot } from './profilePersistence';
 
@@ -967,6 +968,13 @@ export default function App() {
     setDisciplines(current => previewOutlineMerge(current, outline).disciplines);
   };
 
+  const handleApplyPriorityEvidence = (evidence: PriorityEvidenceImport,
+    assignments: PriorityAssignment[]) => {
+    // Functional state update preserves unrelated discipline/topic metadata,
+    // sessions, logs and progress even when another change is pending.
+    setDisciplines(current => previewPriorityAssignments(current, evidence, assignments).disciplines);
+  };
+
   const handleDeleteDiscipline = (id: string) => {
     setDisciplines(disciplines.filter(d => d.id !== id));
   };
@@ -1747,6 +1755,7 @@ export default function App() {
               onDeleteDiscipline={handleDeleteDiscipline}
               onUpdateDiscipline={handleUpdateDiscipline}
               onImportOutline={handleImportOutline}
+              onPriorityEvidence={handleApplyPriorityEvidence}
               exerciseLogs={exerciseLogs}
               activityLogs={activityLogs}
               onAddExerciseLog={handleAddExerciseLog}
