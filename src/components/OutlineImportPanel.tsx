@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { AlertTriangle, FileUp, FileCheck, ShieldCheck } from 'lucide-react';
 import type { Discipline } from '../types';
 import { parseOutline, previewOutlineMerge, type OutlineInput, type OutlinePreview } from '../outlineImport';
+import { TJSP_2026_OUTLINE } from '../tjsp2026Outline';
 
 type Prepared = { input: OutlineInput; preview: OutlinePreview };
 
@@ -52,6 +53,21 @@ export default function OutlineImportPanel({ disciplines, onApply }: Props) {
     }
   };
 
+  const loadTjsp = () => {
+    setError('');
+    setMessage('');
+    setBackupConfirmed(false);
+    setSource(TJSP_2026_OUTLINE.source);
+    setText(JSON.stringify(TJSP_2026_OUTLINE.rows, null, 2));
+    try {
+      const preview = previewOutlineMerge(disciplines, TJSP_2026_OUTLINE);
+      setPrepared({ input: TJSP_2026_OUTLINE, preview });
+    } catch (cause) {
+      setPrepared(null);
+      setError(cause instanceof Error ? cause.message : 'Não foi possível preparar a matriz TJSP.');
+    }
+  };
+
   const prepare = () => {
     setError('');
     setMessage('');
@@ -71,8 +87,7 @@ export default function OutlineImportPanel({ disciplines, onApply }: Props) {
     try {
       // Recheck against the latest prop state before applying.
       const now = previewOutlineMerge(disciplines, prepared.input);
-      const original = prepared.preview.stats;
-      if (JSON.stringify(now.stats) !== JSON.stringify(original)) {
+      if (JSON.stringify(now.disciplines) !== JSON.stringify(prepared.preview.disciplines)) {
         setPrepared({ input: prepared.input, preview: now });
         setBackupConfirmed(false);
         setError('Os dados mudaram. Confira a nova prévia e confirme novamente.');
@@ -100,6 +115,14 @@ export default function OutlineImportPanel({ disciplines, onApply }: Props) {
         </div>
         <FileUp size={20} className="text-slate-400" aria-hidden="true" />
       </div>
+      <button
+        type="button"
+        onClick={loadTjsp}
+        className="mt-3 w-full rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-2.5 text-left text-xs font-bold text-emerald-900 hover:bg-emerald-100 dark:border-emerald-900 dark:bg-emerald-950/50 dark:text-emerald-200"
+      >
+        Carregar matriz TJSP 02/2026 · Anexo VIII (103 linhas, 11 matérias)
+        <span className="mt-1 block text-[11px] font-normal">Conferida com a publicação de 19/10/2026; prioridades A/B/C não são presumidas.</span>
+      </button>
       <div className="mt-3 grid grid-cols-1 gap-3">
         <label className="text-xs font-semibold text-slate-700 dark:text-slate-200">
           Origem e versão da classificação
