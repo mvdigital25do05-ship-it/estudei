@@ -116,6 +116,7 @@ export default function StudyIntelligence({ disciplines, exerciseLogs, activityL
                 <span>Incidência edital: <strong className="text-slate-700 dark:text-slate-200">{item.examPriority ?? 'Não classificada'}</strong></span>
                 <span>Fase: <strong className="text-slate-700 dark:text-slate-200">{PHASE_LABELS[item.phase]}{item.phaseIsManual ? ' (manual)' : ''}</strong></span>
                 <span>Acertos: <strong className="text-slate-700 dark:text-slate-200">{item.accuracy === null ? 'Sem dados' : `${item.accuracy}% (${item.questionsEvaluated} q)`}</strong></span>
+                <span>Questões inéditas identificadas: <strong className="text-slate-700 dark:text-slate-200">{item.newQuestionsEvaluated}</strong></span>
               </div>
               {!item.hasEnoughQuestions && (
                 <p className="mt-1 text-[10px] italic text-amber-700 dark:text-amber-300">
@@ -136,7 +137,7 @@ export default function StudyIntelligence({ disciplines, exerciseLogs, activityL
         <p className="text-[10px] leading-relaxed text-slate-500 dark:text-slate-400">
           <strong>A/B/C do edital</strong> deve ser cadastrado com base na incidência histórica da banca; não é estimado pelos seus erros.
           <strong> Urgência A/B/C</strong> é pessoal e calculada pelo aplicativo. A fase automática usa blocos recentes de até cerca de 50 questões;
-          registros antigos não identificam com segurança se as questões eram inéditas. Os dois históricos de atividades e exercícios
+          registros antigos não identificam com segurança se as questões eram inéditas; blocos marcados como repetidos não entram no cálculo de domínio. Os dois históricos de atividades e exercícios
           não são somados para evitar duplicidade.
         </p>
       </div>
