@@ -44,6 +44,7 @@ import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import AuthScreen from './components/AuthScreen';
 import BackupButton from './components/BackupButton';
 import ImportBackupButton from './components/ImportBackupButton';
+import DownloadTJSPButton from './components/DownloadTJSPButton';
 
 export default function App() {
   // Navigation active state
@@ -1528,6 +1529,7 @@ export default function App() {
 
             <BackupButton />
             <ImportBackupButton />
+            <DownloadTJSPButton />
 
             {/* Help Quick Reference button */}
             <button 

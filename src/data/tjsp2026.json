@@ -1,0 +1,2322 @@
+{
+  "disciplines": [
+    {
+      "id": "tjsp_LP",
+      "name": "Língua Portuguesa",
+      "icon": "book",
+      "colorClass": "blue",
+      "topics": [
+        {
+          "id": "tjsp_LP_001",
+          "name": "[A] LP-001 — Textos verbais, não verbais e mistos",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 1 a 4",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_002",
+          "name": "[A] LP-002 — Textos literários e não literários",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 1 a 4",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_003",
+          "name": "[A] LP-003 — Compreensão global: tema, assunto e finalidade",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 1 a 4",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_004",
+          "name": "[A] LP-004 — Localização de informações explícitas",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 1 a 4",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_005",
+          "name": "[A] LP-005 — Inferências e pressupostos",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 1 a 4",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_006",
+          "name": "[A] LP-006 — Ponto de vista e intenção do autor",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 1 a 4",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_007",
+          "name": "[A] LP-007 — Organização do texto e relação entre ideias",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 1 a 4",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_008",
+          "name": "[A] LP-008 — Coesão textual e conectivos",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 1 a 4",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_009",
+          "name": "[B] LP-009 — Significado contextual de palavras e expressões",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 5 a 7",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_010",
+          "name": "[B] LP-010 — Sinônimos e antônimos",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 5 a 7",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_011",
+          "name": "[B] LP-011 — Sentido próprio e sentido figurado",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 5 a 7",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_012",
+          "name": "[C] LP-012 — Substantivos",
+          "priority": "C",
+          "syllabusReference": "Anexo VIII, Bloco I, item 8",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_013",
+          "name": "[C] LP-013 — Adjetivos",
+          "priority": "C",
+          "syllabusReference": "Anexo VIII, Bloco I, item 8",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_014",
+          "name": "[C] LP-014 — Artigos",
+          "priority": "C",
+          "syllabusReference": "Anexo VIII, Bloco I, item 8",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_015",
+          "name": "[C] LP-015 — Numerais",
+          "priority": "C",
+          "syllabusReference": "Anexo VIII, Bloco I, item 8",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_016",
+          "name": "[C] LP-016 — Pronomes",
+          "priority": "C",
+          "syllabusReference": "Anexo VIII, Bloco I, item 8",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_017",
+          "name": "[B] LP-017 — Verbos e emprego dos tempos e modos",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco I, item 8",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_018",
+          "name": "[C] LP-018 — Advérbios",
+          "priority": "C",
+          "syllabusReference": "Anexo VIII, Bloco I, item 8",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_019",
+          "name": "[C] LP-019 — Preposições",
+          "priority": "C",
+          "syllabusReference": "Anexo VIII, Bloco I, item 8",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_020",
+          "name": "[B] LP-020 — Conjunções",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco I, item 8",
+          "sourcePage": 3
+        },
+        {
+          "id": "tjsp_LP_021",
+          "name": "[B] LP-021 — Concordância verbal",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 9 a 13",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_022",
+          "name": "[B] LP-022 — Concordância nominal",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 9 a 13",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_023",
+          "name": "[B] LP-023 — Regência verbal",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 9 a 13",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_024",
+          "name": "[B] LP-024 — Regência nominal",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 9 a 13",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_025",
+          "name": "[C] LP-025 — Colocação pronominal",
+          "priority": "C",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 9 a 13",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_026",
+          "name": "[B] LP-026 — Emprego da crase",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 9 a 13",
+          "sourcePage": 4
+        },
+        {
+          "id": "tjsp_LP_027",
+          "name": "[B] LP-027 — Pontuação e efeitos de sentido",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco I, itens 9 a 13",
+          "sourcePage": 4
+        }
+      ]
+    },
+    {
+      "id": "tjsp_DP",
+      "name": "Direito Penal",
+      "icon": "scale",
+      "colorClass": "indigo",
+      "topics": [
+        {
+          "id": "tjsp_DP_001",
+          "name": "[B] DP-001 — Falsificação de papéis públicos e petrechos (arts. 293–295)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 293–305; 307; 308; 311-A",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_002",
+          "name": "[B] DP-002 — Falsificação de selo ou sinal público (art. 296)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 293–305; 307; 308; 311-A",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_003",
+          "name": "[A] DP-003 — Falsificação de documento público (art. 297)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 293–305; 307; 308; 311-A",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_004",
+          "name": "[A] DP-004 — Falsificação de documento particular (art. 298)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 293–305; 307; 308; 311-A",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_005",
+          "name": "[A] DP-005 — Falsidade ideológica (art. 299)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 293–305; 307; 308; 311-A",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_006",
+          "name": "[A] DP-006 — Falsidades documentais específicas (arts. 300–302)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 293–305; 307; 308; 311-A",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_007",
+          "name": "[A] DP-007 — Falsidades, uso e supressão de documento (arts. 303–305)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 293–305; 307; 308; 311-A",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_008",
+          "name": "[B] DP-008 — Falsa identidade e documento de identidade alheio (arts. 307–308)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 293–305; 307; 308; 311-A",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_009",
+          "name": "[B] DP-009 — Fraude em certames de interesse público (art. 311-A)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 293–305; 307; 308; 311-A",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_010",
+          "name": "[A] DP-010 — Peculato e modalidades (arts. 312–313-B)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 312–317; 319–327",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_011",
+          "name": "[A] DP-011 — Extravio ou inutilização de livro/documento (art. 314)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 312–317; 319–327",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_012",
+          "name": "[A] DP-012 — Emprego irregular de verbas ou rendas públicas (art. 315)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 312–317; 319–327",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_013",
+          "name": "[A] DP-013 — Concussão e excesso de exação (art. 316)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 312–317; 319–327",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_014",
+          "name": "[A] DP-014 — Corrupção passiva (art. 317)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 312–317; 319–327",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_015",
+          "name": "[A] DP-015 — Prevaricação e modalidades (arts. 319–319-A)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 312–317; 319–327",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_016",
+          "name": "[A] DP-016 — Condescendência criminosa e advocacia administrativa (arts. 320–321)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 312–317; 319–327",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_017",
+          "name": "[A] DP-017 — Violência arbitrária e abandono de função (arts. 322–323)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 312–317; 319–327",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_018",
+          "name": "[A] DP-018 — Exercício funcional ilegal e violação de sigilo (arts. 324–326)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 312–317; 319–327",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_019",
+          "name": "[A] DP-019 — Conceito penal de funcionário público (art. 327)",
+          "priority": "A",
+          "syllabusReference": "Código Penal: arts. 312–317; 319–327",
+          "sourcePage": 5
+        },
+        {
+          "id": "tjsp_DP_020",
+          "name": "[C] DP-020 — Usurpação de função pública (art. 328)",
+          "priority": "C",
+          "syllabusReference": "Código Penal: arts. 328–333; 336–337",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_021",
+          "name": "[C] DP-021 — Resistência (art. 329)",
+          "priority": "C",
+          "syllabusReference": "Código Penal: arts. 328–333; 336–337",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_022",
+          "name": "[C] DP-022 — Desobediência (art. 330)",
+          "priority": "C",
+          "syllabusReference": "Código Penal: arts. 328–333; 336–337",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_023",
+          "name": "[C] DP-023 — Desacato (art. 331)",
+          "priority": "C",
+          "syllabusReference": "Código Penal: arts. 328–333; 336–337",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_024",
+          "name": "[C] DP-024 — Tráfico de influência (art. 332)",
+          "priority": "C",
+          "syllabusReference": "Código Penal: arts. 328–333; 336–337",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_025",
+          "name": "[C] DP-025 — Corrupção ativa (art. 333)",
+          "priority": "C",
+          "syllabusReference": "Código Penal: arts. 328–333; 336–337",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_026",
+          "name": "[C] DP-026 — Inutilização de edital, sinal, livro ou documento (arts. 336–337)",
+          "priority": "C",
+          "syllabusReference": "Código Penal: arts. 328–333; 336–337",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_027",
+          "name": "[B] DP-027 — Denunciação caluniosa e comunicação falsa (arts. 339–340)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 339–347; 357; 359",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_028",
+          "name": "[B] DP-028 — Autoacusação falsa (art. 341)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 339–347; 357; 359",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_029",
+          "name": "[B] DP-029 — Falso testemunho ou falsa perícia (art. 342)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 339–347; 357; 359",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_030",
+          "name": "[B] DP-030 — Corrupção de testemunha ou perito (art. 343)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 339–347; 357; 359",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_031",
+          "name": "[B] DP-031 — Coação no curso do processo (art. 344)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 339–347; 357; 359",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_032",
+          "name": "[B] DP-032 — Exercício arbitrário das próprias razões (arts. 345–346)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 339–347; 357; 359",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_033",
+          "name": "[B] DP-033 — Fraude processual (art. 347)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 339–347; 357; 359",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_034",
+          "name": "[B] DP-034 — Exploração de prestígio (art. 357)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 339–347; 357; 359",
+          "sourcePage": 6
+        },
+        {
+          "id": "tjsp_DP_035",
+          "name": "[B] DP-035 — Desobediência a decisão judicial sobre perda ou suspensão de direito (art. 359)",
+          "priority": "B",
+          "syllabusReference": "Código Penal: arts. 339–347; 357; 359",
+          "sourcePage": 6
+        }
+      ]
+    },
+    {
+      "id": "tjsp_DPP",
+      "name": "Direito Processual Penal",
+      "icon": "scale",
+      "colorClass": "indigo",
+      "topics": [
+        {
+          "id": "tjsp_DPP_001",
+          "name": "[A] DPP-001 — Juiz no processo penal; hipóteses legais (arts. 251–256)",
+          "priority": "A",
+          "syllabusReference": "CPP: arts. 251–258; 261–267; 274",
+          "sourcePage": 7
+        },
+        {
+          "id": "tjsp_DPP_002",
+          "name": "[A] DPP-002 — Ministério Público no processo penal (arts. 257–258)",
+          "priority": "A",
+          "syllabusReference": "CPP: arts. 251–258; 261–267; 274",
+          "sourcePage": 7
+        },
+        {
+          "id": "tjsp_DPP_003",
+          "name": "[A] DPP-003 — Acusado e defensor (arts. 261–267)",
+          "priority": "A",
+          "syllabusReference": "CPP: arts. 251–258; 261–267; 274",
+          "sourcePage": 7
+        },
+        {
+          "id": "tjsp_DPP_004",
+          "name": "[A] DPP-004 — Funcionários da justiça e suspeição (art. 274)",
+          "priority": "A",
+          "syllabusReference": "CPP: arts. 251–258; 261–267; 274",
+          "sourcePage": 7
+        },
+        {
+          "id": "tjsp_DPP_005",
+          "name": "[B] DPP-005 — Citação pessoal e por mandado (arts. 351–360)",
+          "priority": "B",
+          "syllabusReference": "CPP: arts. 351–372",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_006",
+          "name": "[B] DPP-006 — Modalidades especiais de citação (arts. 361–369)",
+          "priority": "B",
+          "syllabusReference": "CPP: arts. 351–372",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_007",
+          "name": "[B] DPP-007 — Intimações e regras finais (arts. 370–372)",
+          "priority": "B",
+          "syllabusReference": "CPP: arts. 351–372",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_008",
+          "name": "[A] DPP-008 — Procedimento comum: disposições gerais e início da instrução (arts. 394–405)",
+          "priority": "A",
+          "syllabusReference": "CPP: arts. 394–497; 531–538; 541–548",
+          "sourcePage": 7
+        },
+        {
+          "id": "tjsp_DPP_009",
+          "name": "[B] DPP-009 — Tribunal do Júri: fase de acusação e pronúncia (arts. 406–421)",
+          "priority": "B",
+          "syllabusReference": "CPP: arts. 394–497; 531–538; 541–548",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_010",
+          "name": "[B] DPP-010 — Tribunal do Júri: organização e julgamento em plenário (arts. 422–497)",
+          "priority": "B",
+          "syllabusReference": "CPP: arts. 394–497; 531–538; 541–548",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_011",
+          "name": "[C] DPP-011 — Procedimento sumário (arts. 531–538)",
+          "priority": "C",
+          "syllabusReference": "CPP: arts. 394–497; 531–538; 541–548",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_012",
+          "name": "[C] DPP-012 — Dispositivos procedimentais dos arts. 541–548 do CPP",
+          "priority": "C",
+          "syllabusReference": "CPP: arts. 394–497; 531–538; 541–548",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_013",
+          "name": "[B] DPP-013 — Regras gerais dos recursos (arts. 574–580)",
+          "priority": "B",
+          "syllabusReference": "CPP: arts. 574–667",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_014",
+          "name": "[B] DPP-014 — Recurso em sentido estrito (arts. 581–592)",
+          "priority": "B",
+          "syllabusReference": "CPP: arts. 574–667",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_015",
+          "name": "[B] DPP-015 — Apelação criminal (arts. 593–603)",
+          "priority": "B",
+          "syllabusReference": "CPP: arts. 574–667",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_016",
+          "name": "[B] DPP-016 — Tramitação e julgamento dos recursos (arts. 604–618)",
+          "priority": "B",
+          "syllabusReference": "CPP: arts. 574–667",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_017",
+          "name": "[B] DPP-017 — Embargos de declaração (arts. 619–620)",
+          "priority": "B",
+          "syllabusReference": "CPP: arts. 574–667",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_018",
+          "name": "[C] DPP-018 — Revisão criminal (arts. 621–631)",
+          "priority": "C",
+          "syllabusReference": "CPP: arts. 574–667",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_019",
+          "name": "[C] DPP-019 — Recursos excepcionais: dispositivos previstos (arts. 632–638)",
+          "priority": "C",
+          "syllabusReference": "CPP: arts. 574–667",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_020",
+          "name": "[C] DPP-020 — Carta testemunhável (arts. 639–646)",
+          "priority": "C",
+          "syllabusReference": "CPP: arts. 574–667",
+          "sourcePage": 8
+        },
+        {
+          "id": "tjsp_DPP_021",
+          "name": "[A] DPP-021 — Habeas corpus (arts. 647–667)",
+          "priority": "A",
+          "syllabusReference": "CPP: arts. 574–667",
+          "sourcePage": 7
+        },
+        {
+          "id": "tjsp_DPP_022",
+          "name": "[A] DPP-022 — Competência e princípios dos Juizados Criminais (arts. 60–62)",
+          "priority": "A",
+          "syllabusReference": "Lei 9.099/1995: arts. 60–83; 88–89",
+          "sourcePage": 7
+        },
+        {
+          "id": "tjsp_DPP_023",
+          "name": "[A] DPP-023 — Atos, citação e intimação nos Juizados (arts. 63–68)",
+          "priority": "A",
+          "syllabusReference": "Lei 9.099/1995: arts. 60–83; 88–89",
+          "sourcePage": 7
+        },
+        {
+          "id": "tjsp_DPP_024",
+          "name": "[A] DPP-024 — Fase preliminar e termo circunstanciado (arts. 69–75)",
+          "priority": "A",
+          "syllabusReference": "Lei 9.099/1995: arts. 60–83; 88–89",
+          "sourcePage": 7
+        },
+        {
+          "id": "tjsp_DPP_025",
+          "name": "[A] DPP-025 — Transação penal (art. 76)",
+          "priority": "A",
+          "syllabusReference": "Lei 9.099/1995: arts. 60–83; 88–89",
+          "sourcePage": 7
+        },
+        {
+          "id": "tjsp_DPP_026",
+          "name": "[A] DPP-026 — Procedimento sumaríssimo criminal (arts. 77–83)",
+          "priority": "A",
+          "syllabusReference": "Lei 9.099/1995: arts. 60–83; 88–89",
+          "sourcePage": 7
+        },
+        {
+          "id": "tjsp_DPP_027",
+          "name": "[A] DPP-027 — Representação e suspensão condicional do processo (arts. 88–89)",
+          "priority": "A",
+          "syllabusReference": "Lei 9.099/1995: arts. 60–83; 88–89",
+          "sourcePage": 7
+        }
+      ]
+    },
+    {
+      "id": "tjsp_DPC",
+      "name": "Direito Processual Civil",
+      "icon": "scale",
+      "colorClass": "indigo",
+      "topics": [
+        {
+          "id": "tjsp_DPC_001",
+          "name": "[A] DPC-001 — Impedimento do juiz (art. 144)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 144–155",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_002",
+          "name": "[A] DPC-002 — Suspeição do juiz (art. 145)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 144–155",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_003",
+          "name": "[A] DPC-003 — Arguição de impedimento e suspeição (arts. 146–148)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 144–155",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_004",
+          "name": "[A] DPC-004 — Auxiliares da justiça e atribuições (arts. 149–155)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 144–155",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_005",
+          "name": "[A] DPC-005 — Forma dos atos processuais (arts. 188–211)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 188–275",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_006",
+          "name": "[A] DPC-006 — Tempo e lugar dos atos (arts. 212–217)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 188–275",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_007",
+          "name": "[A] DPC-007 — Prazos processuais (arts. 218–235)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 188–275",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_008",
+          "name": "[A] DPC-008 — Citação e comunicações dos atos processuais (arts. 236–259)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 188–275",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_009",
+          "name": "[A] DPC-009 — Cartas e intimações (arts. 260–275)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 188–275",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_010",
+          "name": "[B] DPC-010 — Tutela provisória: regras gerais (arts. 294–299)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 294–311",
+          "sourcePage": 10
+        },
+        {
+          "id": "tjsp_DPC_011",
+          "name": "[B] DPC-011 — Tutela de urgência (arts. 300–302)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 294–311",
+          "sourcePage": 10
+        },
+        {
+          "id": "tjsp_DPC_012",
+          "name": "[B] DPC-012 — Tutela antecipada antecedente e estabilização (arts. 303–304)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 294–311",
+          "sourcePage": 10
+        },
+        {
+          "id": "tjsp_DPC_013",
+          "name": "[B] DPC-013 — Tutela cautelar antecedente (arts. 305–310)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 294–311",
+          "sourcePage": 10
+        },
+        {
+          "id": "tjsp_DPC_014",
+          "name": "[B] DPC-014 — Tutela da evidência (art. 311)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 294–311",
+          "sourcePage": 10
+        },
+        {
+          "id": "tjsp_DPC_015",
+          "name": "[A] DPC-015 — Disposições gerais e requisitos da petição inicial (arts. 318–321)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 318–368",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_016",
+          "name": "[A] DPC-016 — Pedido e alterações do pedido (arts. 322–329)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 318–368",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_017",
+          "name": "[A] DPC-017 — Indeferimento da inicial e improcedência liminar (arts. 330–333)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 318–368",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_018",
+          "name": "[A] DPC-018 — Audiência de conciliação ou mediação (art. 334)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 318–368",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_019",
+          "name": "[A] DPC-019 — Contestação (arts. 335–342)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 318–368",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_020",
+          "name": "[A] DPC-020 — Reconvenção (art. 343)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 318–368",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_021",
+          "name": "[A] DPC-021 — Revelia e seus efeitos (arts. 344–346)",
+          "priority": "A",
+          "syllabusReference": "CPC: arts. 318–368",
+          "sourcePage": 9
+        },
+        {
+          "id": "tjsp_DPC_022",
+          "name": "[B] DPC-022 — Providências preliminares e saneamento (arts. 347–357)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 318–368",
+          "sourcePage": 10
+        },
+        {
+          "id": "tjsp_DPC_023",
+          "name": "[B] DPC-023 — Audiência de instrução e julgamento (arts. 358–368)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 318–368",
+          "sourcePage": 10
+        },
+        {
+          "id": "tjsp_DPC_024",
+          "name": "[B] DPC-024 — Normas gerais sobre provas (arts. 369–380)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 369–484",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_025",
+          "name": "[C] DPC-025 — Produção antecipada de prova (arts. 381–383)",
+          "priority": "C",
+          "syllabusReference": "CPC: arts. 369–484",
+          "sourcePage": 12
+        },
+        {
+          "id": "tjsp_DPC_026",
+          "name": "[C] DPC-026 — Ata notarial (art. 384)",
+          "priority": "C",
+          "syllabusReference": "CPC: arts. 369–484",
+          "sourcePage": 12
+        },
+        {
+          "id": "tjsp_DPC_027",
+          "name": "[B] DPC-027 — Depoimento pessoal (arts. 385–388)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 369–484",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_028",
+          "name": "[C] DPC-028 — Confissão (arts. 389–395)",
+          "priority": "C",
+          "syllabusReference": "CPC: arts. 369–484",
+          "sourcePage": 12
+        },
+        {
+          "id": "tjsp_DPC_029",
+          "name": "[B] DPC-029 — Exibição de documento ou coisa (arts. 396–404)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 369–484",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_030",
+          "name": "[B] DPC-030 — Documentos e prova documental (arts. 405–441)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 369–484",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_031",
+          "name": "[B] DPC-031 — Prova testemunhal (arts. 442–463)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 369–484",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_032",
+          "name": "[B] DPC-032 — Prova pericial (arts. 464–480)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 369–484",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_033",
+          "name": "[C] DPC-033 — Inspeção judicial (arts. 481–484)",
+          "priority": "C",
+          "syllabusReference": "CPC: arts. 369–484",
+          "sourcePage": 12
+        },
+        {
+          "id": "tjsp_DPC_034",
+          "name": "[B] DPC-034 — Sentença, seus elementos e efeitos (arts. 485–495)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 485–538",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_035",
+          "name": "[B] DPC-035 — Remessa necessária e coisa julgada (arts. 496–508)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 485–538",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_036",
+          "name": "[B] DPC-036 — Liquidação de sentença (arts. 509–512)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 485–538",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_037",
+          "name": "[B] DPC-037 — Cumprimento de sentença: disposições gerais (arts. 513–519)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 485–538",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_038",
+          "name": "[B] DPC-038 — Cumprimento de sentença por quantia certa (arts. 520–527)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 485–538",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_039",
+          "name": "[B] DPC-039 — Cumprimento de obrigações específicas e Fazenda Pública (arts. 528–538)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 485–538",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_040",
+          "name": "[B] DPC-040 — Disposições gerais sobre recursos (arts. 994–1.008)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 994–1.026",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_041",
+          "name": "[B] DPC-041 — Apelação (arts. 1.009–1.014)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 994–1.026",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_042",
+          "name": "[B] DPC-042 — Agravo de instrumento (arts. 1.015–1.020)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 994–1.026",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_043",
+          "name": "[B] DPC-043 — Agravo interno (art. 1.021)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 994–1.026",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_044",
+          "name": "[B] DPC-044 — Embargos de declaração (arts. 1.022–1.026)",
+          "priority": "B",
+          "syllabusReference": "CPC: arts. 994–1.026",
+          "sourcePage": 11
+        },
+        {
+          "id": "tjsp_DPC_045",
+          "name": "[A] DPC-045 — Competência dos Juizados Especiais Cíveis (arts. 3º–4º)",
+          "priority": "A",
+          "syllabusReference": "Lei 9.099/1995: arts. 3º–19",
+          "sourcePage": 10
+        },
+        {
+          "id": "tjsp_DPC_046",
+          "name": "[A] DPC-046 — Partes e representação nos Juizados (arts. 5º–9º)",
+          "priority": "A",
+          "syllabusReference": "Lei 9.099/1995: arts. 3º–19",
+          "sourcePage": 10
+        },
+        {
+          "id": "tjsp_DPC_047",
+          "name": "[A] DPC-047 — Atos processuais e comunicação nos Juizados (arts. 10–19)",
+          "priority": "A",
+          "syllabusReference": "Lei 9.099/1995: arts. 3º–19",
+          "sourcePage": 10
+        },
+        {
+          "id": "tjsp_DPC_048",
+          "name": "[A] DPC-048 — Competência e princípios da Lei 12.153/2009",
+          "priority": "A",
+          "syllabusReference": "Lei 12.153/2009: integral",
+          "sourcePage": 10
+        },
+        {
+          "id": "tjsp_DPC_049",
+          "name": "[A] DPC-049 — Partes, atos e procedimento dos Juizados da Fazenda Pública",
+          "priority": "A",
+          "syllabusReference": "Lei 12.153/2009: integral",
+          "sourcePage": 10
+        },
+        {
+          "id": "tjsp_DPC_050",
+          "name": "[A] DPC-050 — Recursos, cumprimento e disposições finais da Lei 12.153/2009",
+          "priority": "A",
+          "syllabusReference": "Lei 12.153/2009: integral",
+          "sourcePage": 10
+        }
+      ]
+    },
+    {
+      "id": "tjsp_DC",
+      "name": "Direito Constitucional",
+      "icon": "scale",
+      "colorClass": "blue",
+      "topics": [
+        {
+          "id": "tjsp_DC_001",
+          "name": "[A] DC-001 — Direitos individuais e coletivos (art. 5º)",
+          "priority": "A",
+          "syllabusReference": "CF/1988: Título II, Capítulos I–III",
+          "sourcePage": 13
+        },
+        {
+          "id": "tjsp_DC_002",
+          "name": "[B] DC-002 — Direitos sociais (arts. 6º–11)",
+          "priority": "B",
+          "syllabusReference": "CF/1988: Título II, Capítulos I–III",
+          "sourcePage": 13
+        },
+        {
+          "id": "tjsp_DC_003",
+          "name": "[B] DC-003 — Nacionalidade (arts. 12–13)",
+          "priority": "B",
+          "syllabusReference": "CF/1988: Título II, Capítulos I–III",
+          "sourcePage": 13
+        },
+        {
+          "id": "tjsp_DC_004",
+          "name": "[A] DC-004 — Princípios e regras da Administração Pública (art. 37)",
+          "priority": "A",
+          "syllabusReference": "CF/1988: Título III, Capítulo VII, Seções I e II",
+          "sourcePage": 13
+        },
+        {
+          "id": "tjsp_DC_005",
+          "name": "[A] DC-005 — Mandato eletivo e servidores públicos (art. 38)",
+          "priority": "A",
+          "syllabusReference": "CF/1988: Título III, Capítulo VII, Seções I e II",
+          "sourcePage": 13
+        },
+        {
+          "id": "tjsp_DC_006",
+          "name": "[A] DC-006 — Servidores públicos: regime e garantias (arts. 39–41)",
+          "priority": "A",
+          "syllabusReference": "CF/1988: Título III, Capítulo VII, Seções I e II",
+          "sourcePage": 13
+        },
+        {
+          "id": "tjsp_DC_007",
+          "name": "[C] DC-007 — Órgãos do Poder Judiciário (art. 92)",
+          "priority": "C",
+          "syllabusReference": "CF/1988: art. 92",
+          "sourcePage": 13
+        }
+      ]
+    },
+    {
+      "id": "tjsp_DA",
+      "name": "Direito Administrativo",
+      "icon": "scale",
+      "colorClass": "indigo",
+      "topics": [
+        {
+          "id": "tjsp_DA_001",
+          "name": "[C] DA-001 — Disposições preliminares do Estatuto (arts. 1º–10)",
+          "priority": "C",
+          "syllabusReference": "Lei estadual 10.261/1968: arts. 1º–86",
+          "sourcePage": 15
+        },
+        {
+          "id": "tjsp_DA_002",
+          "name": "[B] DA-002 — Provimento e nomeação (arts. 11–30)",
+          "priority": "B",
+          "syllabusReference": "Lei estadual 10.261/1968: arts. 1º–86",
+          "sourcePage": 14
+        },
+        {
+          "id": "tjsp_DA_003",
+          "name": "[B] DA-003 — Posse, exercício e aspectos da vida funcional (arts. 31–54)",
+          "priority": "B",
+          "syllabusReference": "Lei estadual 10.261/1968: arts. 1º–86",
+          "sourcePage": 14
+        },
+        {
+          "id": "tjsp_DA_004",
+          "name": "[B] DA-004 — Movimentação e demais regras funcionais (arts. 55–86)",
+          "priority": "B",
+          "syllabusReference": "Lei estadual 10.261/1968: arts. 1º–86",
+          "sourcePage": 14
+        },
+        {
+          "id": "tjsp_DA_005",
+          "name": "[C] DA-005 — Dispositivos estatutários dos arts. 171–175",
+          "priority": "C",
+          "syllabusReference": "Lei estadual 10.261/1968: arts. 171–175; 239–323",
+          "sourcePage": 15
+        },
+        {
+          "id": "tjsp_DA_006",
+          "name": "[B] DA-006 — Direito de petição dos servidores (arts. 239–240)",
+          "priority": "B",
+          "syllabusReference": "Lei estadual 10.261/1968: arts. 171–175; 239–323",
+          "sourcePage": 15
+        },
+        {
+          "id": "tjsp_DA_007",
+          "name": "[A] DA-007 — Deveres e proibições (arts. 241–243)",
+          "priority": "A",
+          "syllabusReference": "Lei estadual 10.261/1968: arts. 171–175; 239–323",
+          "sourcePage": 14
+        },
+        {
+          "id": "tjsp_DA_008",
+          "name": "[A] DA-008 — Responsabilidades e penalidades (arts. 244–260)",
+          "priority": "A",
+          "syllabusReference": "Lei estadual 10.261/1968: arts. 171–175; 239–323",
+          "sourcePage": 14
+        },
+        {
+          "id": "tjsp_DA_009",
+          "name": "[B] DA-009 — Procedimentos disciplinares: disposições e sindicância (arts. 261–273)",
+          "priority": "B",
+          "syllabusReference": "Lei estadual 10.261/1968: arts. 171–175; 239–323",
+          "sourcePage": 15
+        },
+        {
+          "id": "tjsp_DA_010",
+          "name": "[B] DA-010 — Processo administrativo disciplinar — regras e rito (arts. 274–310)",
+          "priority": "B",
+          "syllabusReference": "Lei estadual 10.261/1968: arts. 171–175; 239–323",
+          "sourcePage": 15
+        },
+        {
+          "id": "tjsp_DA_011",
+          "name": "[B] DA-011 — Regras de impugnação e disposições finais (arts. 311–323)",
+          "priority": "B",
+          "syllabusReference": "Lei estadual 10.261/1968: arts. 171–175; 239–323",
+          "sourcePage": 15
+        },
+        {
+          "id": "tjsp_DA_012",
+          "name": "[A] DA-012 — Âmbito, sujeitos e conceitos gerais da improbidade",
+          "priority": "A",
+          "syllabusReference": "Lei federal 8.429/1992: integral",
+          "sourcePage": 14
+        },
+        {
+          "id": "tjsp_DA_013",
+          "name": "[A] DA-013 — Atos de improbidade por enriquecimento ilícito",
+          "priority": "A",
+          "syllabusReference": "Lei federal 8.429/1992: integral",
+          "sourcePage": 14
+        },
+        {
+          "id": "tjsp_DA_014",
+          "name": "[A] DA-014 — Atos de improbidade que causam lesão ao erário",
+          "priority": "A",
+          "syllabusReference": "Lei federal 8.429/1992: integral",
+          "sourcePage": 14
+        },
+        {
+          "id": "tjsp_DA_015",
+          "name": "[A] DA-015 — Atos de improbidade que violam princípios da Administração",
+          "priority": "A",
+          "syllabusReference": "Lei federal 8.429/1992: integral",
+          "sourcePage": 14
+        },
+        {
+          "id": "tjsp_DA_016",
+          "name": "[A] DA-016 — Sanções e critérios de aplicação",
+          "priority": "A",
+          "syllabusReference": "Lei federal 8.429/1992: integral",
+          "sourcePage": 14
+        },
+        {
+          "id": "tjsp_DA_017",
+          "name": "[B] DA-017 — Declaração patrimonial e regras conexas",
+          "priority": "B",
+          "syllabusReference": "Lei federal 8.429/1992: integral",
+          "sourcePage": 15
+        },
+        {
+          "id": "tjsp_DA_018",
+          "name": "[A] DA-018 — Procedimento judicial e responsabilização",
+          "priority": "A",
+          "syllabusReference": "Lei federal 8.429/1992: integral",
+          "sourcePage": 14
+        },
+        {
+          "id": "tjsp_DA_019",
+          "name": "[A] DA-019 — Prescrição e disposições finais da Lei de Improbidade",
+          "priority": "A",
+          "syllabusReference": "Lei federal 8.429/1992: integral",
+          "sourcePage": 14
+        }
+      ]
+    },
+    {
+      "id": "tjsp_LI",
+      "name": "Legislação Interna",
+      "icon": "scale",
+      "colorClass": "indigo",
+      "topics": [
+        {
+          "id": "tjsp_LI_001",
+          "name": "[B] LI-001 — Regras e conceitos gerais do teletrabalho no TJSP",
+          "priority": "B",
+          "syllabusReference": "Resolução TJSP 850/2021: integral",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_002",
+          "name": "[B] LI-002 — Requisitos, condições, adesão e execução do teletrabalho",
+          "priority": "B",
+          "syllabusReference": "Resolução TJSP 850/2021: integral",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_003",
+          "name": "[B] LI-003 — Deveres, acompanhamento e demais regras do teletrabalho",
+          "priority": "B",
+          "syllabusReference": "Resolução TJSP 850/2021: integral",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_004",
+          "name": "[A] LI-004 — Princípios e governança do sistema eproc",
+          "priority": "A",
+          "syllabusReference": "Resolução TJSP 963/2025: integral",
+          "sourcePage": 16
+        },
+        {
+          "id": "tjsp_LI_005",
+          "name": "[A] LI-005 — Uso do sistema eproc e atribuições das unidades",
+          "priority": "A",
+          "syllabusReference": "Resolução TJSP 963/2025: integral",
+          "sourcePage": 16
+        },
+        {
+          "id": "tjsp_LI_006",
+          "name": "[A] LI-006 — Disposições operacionais e finais da Resolução 963/2025",
+          "priority": "A",
+          "syllabusReference": "Resolução TJSP 963/2025: integral",
+          "sourcePage": 16
+        },
+        {
+          "id": "tjsp_LI_007",
+          "name": "[B] LI-007 — Estrutura de cargos e carreiras do TJSP",
+          "priority": "B",
+          "syllabusReference": "LC estadual 1.111/2010 (dispositivos legais; anexos fora do escopo pessoal)",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_008",
+          "name": "[B] LI-008 — Regras sobre desenvolvimento, evolução e remuneração",
+          "priority": "B",
+          "syllabusReference": "LC estadual 1.111/2010 (dispositivos legais; anexos fora do escopo pessoal)",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_009",
+          "name": "[B] LI-009 — Demais disposições normativas da LC 1.111/2010 (sem anexos)",
+          "priority": "B",
+          "syllabusReference": "LC estadual 1.111/2010 (lei integral; anexos fora do escopo pessoal)",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_010",
+          "name": "[B] LI-010 — Organização e órgãos do TJSP no Regimento Interno",
+          "priority": "B",
+          "syllabusReference": "Regimento Interno TJSP: integral, sem recortes de artigos no edital",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_011",
+          "name": "[B] LI-011 — Competências e atribuições regimentais",
+          "priority": "B",
+          "syllabusReference": "Regimento Interno TJSP: integral, sem recortes de artigos no edital",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_012",
+          "name": "[C] LI-012 — Funcionamento, procedimentos e demais dispositivos regimentais",
+          "priority": "C",
+          "syllabusReference": "Regimento Interno TJSP: integral, sem recortes de artigos no edital",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_013",
+          "name": "[A] LI-013 — Tomo I, Capítulo II, Seção I, Subseção I",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. II, Seção I, Subseções I e II",
+          "sourcePage": 16
+        },
+        {
+          "id": "tjsp_LI_014",
+          "name": "[A] LI-014 — Tomo I, Capítulo II, Seção I, Subseção II",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. II, Seção I, Subseções I e II",
+          "sourcePage": 16
+        },
+        {
+          "id": "tjsp_LI_015",
+          "name": "[A] LI-015 — Tomo I, Capítulo III, Seção I",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 16
+        },
+        {
+          "id": "tjsp_LI_016",
+          "name": "[A] LI-016 — Tomo I, Capítulo III, Seção II",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 16
+        },
+        {
+          "id": "tjsp_LI_017",
+          "name": "[B] LI-017 — Tomo I, Capítulo III, Seção V",
+          "priority": "B",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_018",
+          "name": "[B] LI-018 — Tomo I, Capítulo III, Seção VI",
+          "priority": "B",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_019",
+          "name": "[B] LI-019 — Tomo I, Capítulo III, Seção VII",
+          "priority": "B",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_020",
+          "name": "[A] LI-020 — Tomo I, Capítulo III, Seção VIII, Subseção I",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 16
+        },
+        {
+          "id": "tjsp_LI_021",
+          "name": "[A] LI-021 — Tomo I, Capítulo III, Seção VIII, Subseção II",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 16
+        },
+        {
+          "id": "tjsp_LI_022",
+          "name": "[A] LI-022 — Tomo I, Capítulo III, Seção VIII, Subseção III",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 16
+        },
+        {
+          "id": "tjsp_LI_023",
+          "name": "[B] LI-023 — Tomo I, Capítulo III, Seção IX",
+          "priority": "B",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_024",
+          "name": "[B] LI-024 — Tomo I, Capítulo III, Seção X",
+          "priority": "B",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_025",
+          "name": "[B] LI-025 — Tomo I, Capítulo III, Seção XI",
+          "priority": "B",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_026",
+          "name": "[B] LI-026 — Tomo I, Capítulo III, Seção XII",
+          "priority": "B",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_027",
+          "name": "[B] LI-027 — Tomo I, Capítulo III, Seção XIII",
+          "priority": "B",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_028",
+          "name": "[B] LI-028 — Tomo I, Capítulo III, Seção XIV",
+          "priority": "B",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_029",
+          "name": "[C] LI-029 — Tomo I, Capítulo III, Seção XV",
+          "priority": "C",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_030",
+          "name": "[C] LI-030 — Tomo I, Capítulo III, Seção XVI",
+          "priority": "C",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_031",
+          "name": "[C] LI-031 — Tomo I, Capítulo III, Seção XVII",
+          "priority": "C",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_032",
+          "name": "[C] LI-032 — Tomo I, Capítulo III, Seção XVIII",
+          "priority": "C",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_033",
+          "name": "[C] LI-033 — Tomo I, Capítulo III, Seção XIX",
+          "priority": "C",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. III, Seções I, II, V, VI, VII; VIII (Subseções I–III); IX–XIX",
+          "sourcePage": 18
+        },
+        {
+          "id": "tjsp_LI_034",
+          "name": "[A] LI-034 — Tomo I, Capítulo XI, Seção I",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. XI, Seções I–VII",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_035",
+          "name": "[A] LI-035 — Tomo I, Capítulo XI, Seção II",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. XI, Seções I–VII",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_036",
+          "name": "[A] LI-036 — Tomo I, Capítulo XI, Seção III",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. XI, Seções I–VII",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_037",
+          "name": "[A] LI-037 — Tomo I, Capítulo XI, Seção IV",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. XI, Seções I–VII",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_038",
+          "name": "[A] LI-038 — Tomo I, Capítulo XI, Seção V",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. XI, Seções I–VII",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_039",
+          "name": "[A] LI-039 — Tomo I, Capítulo XI, Seção VI",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. XI, Seções I–VII",
+          "sourcePage": 17
+        },
+        {
+          "id": "tjsp_LI_040",
+          "name": "[A] LI-040 — Tomo I, Capítulo XI, Seção VII",
+          "priority": "A",
+          "syllabusReference": "NSCGJ, Tomo I, Cap. XI, Seções I–VII",
+          "sourcePage": 17
+        }
+      ]
+    },
+    {
+      "id": "tjsp_AT",
+      "name": "Atualidades e LBI",
+      "icon": "book",
+      "colorClass": "indigo",
+      "topics": [
+        {
+          "id": "tjsp_AT_001",
+          "name": "[B] AT-001 — Fatos políticos nacionais e internacionais desde o 1º semestre de 2026",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Atualidades; fatos desde 1º semestre de 2026",
+          "sourcePage": 19
+        },
+        {
+          "id": "tjsp_AT_002",
+          "name": "[B] AT-002 — Fatos econômicos nacionais e internacionais desde o 1º semestre de 2026",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Atualidades; fatos desde 1º semestre de 2026",
+          "sourcePage": 19
+        },
+        {
+          "id": "tjsp_AT_003",
+          "name": "[B] AT-003 — Fatos sociais e culturais desde o 1º semestre de 2026",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Atualidades; fatos desde 1º semestre de 2026",
+          "sourcePage": 19
+        },
+        {
+          "id": "tjsp_AT_004",
+          "name": "[A] AT-004 — LBI — disposições gerais, definições e direitos (arts. 1º–13)",
+          "priority": "A",
+          "syllabusReference": "Lei 13.146/2015: arts. 1º–13; 34–38 (NÃO inclui arts. 79–87 neste edital)",
+          "sourcePage": 19
+        },
+        {
+          "id": "tjsp_AT_005",
+          "name": "[A] AT-005 — LBI — direito ao trabalho (arts. 34–38)",
+          "priority": "A",
+          "syllabusReference": "Lei 13.146/2015: arts. 1º–13; 34–38 (NÃO inclui arts. 79–87 neste edital)",
+          "sourcePage": 19
+        }
+      ]
+    },
+    {
+      "id": "tjsp_MAT",
+      "name": "Matemática",
+      "icon": "calculate",
+      "colorClass": "blue",
+      "topics": [
+        {
+          "id": "tjsp_MAT_001",
+          "name": "[B] MAT-001 — Operações com números reais",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 1–7",
+          "sourcePage": 21
+        },
+        {
+          "id": "tjsp_MAT_002",
+          "name": "[B] MAT-002 — Mínimo múltiplo comum (MMC)",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 1–7",
+          "sourcePage": 21
+        },
+        {
+          "id": "tjsp_MAT_003",
+          "name": "[B] MAT-003 — Máximo divisor comum (MDC)",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 1–7",
+          "sourcePage": 21
+        },
+        {
+          "id": "tjsp_MAT_004",
+          "name": "[A] MAT-004 — Razão e proporção",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 1–7",
+          "sourcePage": 20
+        },
+        {
+          "id": "tjsp_MAT_005",
+          "name": "[A] MAT-005 — Porcentagem",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 1–7",
+          "sourcePage": 20
+        },
+        {
+          "id": "tjsp_MAT_006",
+          "name": "[A] MAT-006 — Regra de três simples",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 1–7",
+          "sourcePage": 20
+        },
+        {
+          "id": "tjsp_MAT_007",
+          "name": "[A] MAT-007 — Regra de três composta",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 1–7",
+          "sourcePage": 20
+        },
+        {
+          "id": "tjsp_MAT_008",
+          "name": "[B] MAT-008 — Média aritmética simples",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 1–7",
+          "sourcePage": 21
+        },
+        {
+          "id": "tjsp_MAT_009",
+          "name": "[B] MAT-009 — Média aritmética ponderada",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 1–7",
+          "sourcePage": 21
+        },
+        {
+          "id": "tjsp_MAT_010",
+          "name": "[C] MAT-010 — Juros simples",
+          "priority": "C",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 1–7",
+          "sourcePage": 21
+        },
+        {
+          "id": "tjsp_MAT_011",
+          "name": "[A] MAT-011 — Equações do 1º grau",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 8–11",
+          "sourcePage": 20
+        },
+        {
+          "id": "tjsp_MAT_012",
+          "name": "[A] MAT-012 — Equações do 2º grau",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 8–11",
+          "sourcePage": 20
+        },
+        {
+          "id": "tjsp_MAT_013",
+          "name": "[A] MAT-013 — Sistemas de equações do 1º grau",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 8–11",
+          "sourcePage": 20
+        },
+        {
+          "id": "tjsp_MAT_014",
+          "name": "[B] MAT-014 — Relação entre grandezas — tabelas",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 8–11",
+          "sourcePage": 21
+        },
+        {
+          "id": "tjsp_MAT_015",
+          "name": "[B] MAT-015 — Relação entre grandezas — gráficos",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 8–11",
+          "sourcePage": 21
+        },
+        {
+          "id": "tjsp_MAT_016",
+          "name": "[B] MAT-016 — Sistemas de medidas usuais",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 8–11",
+          "sourcePage": 21
+        },
+        {
+          "id": "tjsp_MAT_017",
+          "name": "[A] MAT-017 — Formas geométricas e ângulos",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 12–13",
+          "sourcePage": 20
+        },
+        {
+          "id": "tjsp_MAT_018",
+          "name": "[A] MAT-018 — Perímetro e área",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 12–13",
+          "sourcePage": 20
+        },
+        {
+          "id": "tjsp_MAT_019",
+          "name": "[A] MAT-019 — Volumes",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 12–13",
+          "sourcePage": 20
+        },
+        {
+          "id": "tjsp_MAT_020",
+          "name": "[A] MAT-020 — Teorema de Pitágoras",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 12–13",
+          "sourcePage": 20
+        },
+        {
+          "id": "tjsp_MAT_021",
+          "name": "[A] MAT-021 — Resolução de situações-problema",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Matemática, itens 12–13",
+          "sourcePage": 20
+        }
+      ]
+    },
+    {
+      "id": "tjsp_INF",
+      "name": "Informática",
+      "icon": "computer",
+      "colorClass": "indigo",
+      "topics": [
+        {
+          "id": "tjsp_INF_001",
+          "name": "[B] INF-001 — Pastas e diretórios",
+          "priority": "B",
+          "syllabusReference": "Windows 10 ou superior; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_002",
+          "name": "[B] INF-002 — Arquivos e atalhos",
+          "priority": "B",
+          "syllabusReference": "Windows 10 ou superior; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_003",
+          "name": "[B] INF-003 — Área de trabalho",
+          "priority": "B",
+          "syllabusReference": "Windows 10 ou superior; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_004",
+          "name": "[B] INF-004 — Área de transferência",
+          "priority": "B",
+          "syllabusReference": "Windows 10 ou superior; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_005",
+          "name": "[B] INF-005 — Manipulação de arquivos e pastas",
+          "priority": "B",
+          "syllabusReference": "Windows 10 ou superior; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_006",
+          "name": "[B] INF-006 — Menus, programas e aplicativos",
+          "priority": "B",
+          "syllabusReference": "Windows 10 ou superior; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_007",
+          "name": "[B] INF-007 — Interação do Windows com Microsoft 365",
+          "priority": "B",
+          "syllabusReference": "Windows 10 ou superior; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_008",
+          "name": "[A] INF-008 — Estrutura e edição básica de documentos",
+          "priority": "A",
+          "syllabusReference": "MS-Word; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_009",
+          "name": "[A] INF-009 — Formatação de texto, parágrafos e fontes",
+          "priority": "A",
+          "syllabusReference": "MS-Word; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_010",
+          "name": "[A] INF-010 — Cabeçalhos e colunas",
+          "priority": "A",
+          "syllabusReference": "MS-Word; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_011",
+          "name": "[A] INF-011 — Marcadores e numeração",
+          "priority": "A",
+          "syllabusReference": "MS-Word; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_012",
+          "name": "[A] INF-012 — Tabelas em documentos",
+          "priority": "A",
+          "syllabusReference": "MS-Word; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_013",
+          "name": "[A] INF-013 — Configuração de impressão",
+          "priority": "A",
+          "syllabusReference": "MS-Word; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_014",
+          "name": "[A] INF-014 — Quebras e numeração de páginas",
+          "priority": "A",
+          "syllabusReference": "MS-Word; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_015",
+          "name": "[C] INF-015 — Legendas e índices",
+          "priority": "C",
+          "syllabusReference": "MS-Word; Anexo VIII, Bloco III",
+          "sourcePage": 24
+        },
+        {
+          "id": "tjsp_INF_016",
+          "name": "[B] INF-016 — Inserção de objetos",
+          "priority": "B",
+          "syllabusReference": "MS-Word; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_017",
+          "name": "[C] INF-017 — Campos predefinidos e caixas de texto",
+          "priority": "C",
+          "syllabusReference": "MS-Word; Anexo VIII, Bloco III",
+          "sourcePage": 24
+        },
+        {
+          "id": "tjsp_INF_018",
+          "name": "[A] INF-018 — Estrutura de planilhas, pastas, células, linhas e colunas",
+          "priority": "A",
+          "syllabusReference": "MS-Excel; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_019",
+          "name": "[A] INF-019 — Criação e formatação de tabelas",
+          "priority": "A",
+          "syllabusReference": "MS-Excel; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_020",
+          "name": "[A] INF-020 — Gráficos no Excel",
+          "priority": "A",
+          "syllabusReference": "MS-Excel; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_021",
+          "name": "[A] INF-021 — Fórmulas",
+          "priority": "A",
+          "syllabusReference": "MS-Excel; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_022",
+          "name": "[A] INF-022 — Funções",
+          "priority": "A",
+          "syllabusReference": "MS-Excel; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_023",
+          "name": "[C] INF-023 — Macros",
+          "priority": "C",
+          "syllabusReference": "MS-Excel; Anexo VIII, Bloco III",
+          "sourcePage": 24
+        },
+        {
+          "id": "tjsp_INF_024",
+          "name": "[B] INF-024 — Impressão de planilhas",
+          "priority": "B",
+          "syllabusReference": "MS-Excel; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_025",
+          "name": "[C] INF-025 — Inserção de objetos e campos predefinidos",
+          "priority": "C",
+          "syllabusReference": "MS-Excel; Anexo VIII, Bloco III",
+          "sourcePage": 24
+        },
+        {
+          "id": "tjsp_INF_026",
+          "name": "[B] INF-026 — Quebras e numeração de páginas",
+          "priority": "B",
+          "syllabusReference": "MS-Excel; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_027",
+          "name": "[C] INF-027 — Obtenção de dados externos",
+          "priority": "C",
+          "syllabusReference": "MS-Excel; Anexo VIII, Bloco III",
+          "sourcePage": 24
+        },
+        {
+          "id": "tjsp_INF_028",
+          "name": "[A] INF-028 — Classificação de dados",
+          "priority": "A",
+          "syllabusReference": "MS-Excel; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_029",
+          "name": "[A] INF-029 — Correio eletrônico: uso e leitura de mensagens",
+          "priority": "A",
+          "syllabusReference": "Correio eletrônico e Internet; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_030",
+          "name": "[A] INF-030 — Preparo e envio de e-mails",
+          "priority": "A",
+          "syllabusReference": "Correio eletrônico e Internet; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_031",
+          "name": "[A] INF-031 — Anexação de arquivos",
+          "priority": "A",
+          "syllabusReference": "Correio eletrônico e Internet; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_032",
+          "name": "[A] INF-032 — Navegação na Internet",
+          "priority": "A",
+          "syllabusReference": "Correio eletrônico e Internet; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_033",
+          "name": "[A] INF-033 — URLs, links e sites",
+          "priority": "A",
+          "syllabusReference": "Correio eletrônico e Internet; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_034",
+          "name": "[A] INF-034 — Busca e impressão de páginas da Internet",
+          "priority": "A",
+          "syllabusReference": "Correio eletrônico e Internet; Anexo VIII, Bloco III",
+          "sourcePage": 22
+        },
+        {
+          "id": "tjsp_INF_035",
+          "name": "[B] INF-035 — Teams: chats e grupos",
+          "priority": "B",
+          "syllabusReference": "MS-Teams e OneDrive; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_036",
+          "name": "[B] INF-036 — Teams: chamadas de áudio e vídeo",
+          "priority": "B",
+          "syllabusReference": "MS-Teams e OneDrive; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_037",
+          "name": "[B] INF-037 — Teams: trabalho em equipe com Word, Excel, PowerPoint, SharePoint e OneNote",
+          "priority": "B",
+          "syllabusReference": "MS-Teams e OneDrive; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_038",
+          "name": "[B] INF-038 — Teams: agendamento de reuniões e gravação",
+          "priority": "B",
+          "syllabusReference": "MS-Teams e OneDrive; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_039",
+          "name": "[B] INF-039 — OneDrive: armazenamento de arquivos",
+          "priority": "B",
+          "syllabusReference": "MS-Teams e OneDrive; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        },
+        {
+          "id": "tjsp_INF_040",
+          "name": "[B] INF-040 — OneDrive: compartilhamento de arquivos",
+          "priority": "B",
+          "syllabusReference": "MS-Teams e OneDrive; Anexo VIII, Bloco III",
+          "sourcePage": 23
+        }
+      ]
+    },
+    {
+      "id": "tjsp_RL",
+      "name": "Raciocínio Lógico",
+      "icon": "calculate",
+      "colorClass": "blue",
+      "topics": [
+        {
+          "id": "tjsp_RL_001",
+          "name": "[A] RL-001 — Relações entre pessoas, lugares, objetos e eventos fictícios",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Raciocínio Lógico",
+          "sourcePage": 25
+        },
+        {
+          "id": "tjsp_RL_002",
+          "name": "[A] RL-002 — Dedução de informações a partir de relações dadas",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Raciocínio Lógico",
+          "sourcePage": 25
+        },
+        {
+          "id": "tjsp_RL_003",
+          "name": "[A] RL-003 — Avaliação de condições e restrições de um problema",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Raciocínio Lógico",
+          "sourcePage": 25
+        },
+        {
+          "id": "tjsp_RL_004",
+          "name": "[A] RL-004 — Estruturas lógicas e proposições",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Raciocínio Lógico",
+          "sourcePage": 25
+        },
+        {
+          "id": "tjsp_RL_005",
+          "name": "[A] RL-005 — Lógica de argumentação e inferência",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Raciocínio Lógico",
+          "sourcePage": 25
+        },
+        {
+          "id": "tjsp_RL_006",
+          "name": "[A] RL-006 — Equivalências e negações lógicas",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Raciocínio Lógico",
+          "sourcePage": 25
+        },
+        {
+          "id": "tjsp_RL_007",
+          "name": "[A] RL-007 — Diagramas lógicos",
+          "priority": "A",
+          "syllabusReference": "Anexo VIII, Bloco III, Raciocínio Lógico",
+          "sourcePage": 25
+        },
+        {
+          "id": "tjsp_RL_008",
+          "name": "[B] RL-008 — Sequências numéricas e regularidades",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Raciocínio Lógico",
+          "sourcePage": 25
+        },
+        {
+          "id": "tjsp_RL_009",
+          "name": "[B] RL-009 — Sequências figurais e identificação de posição",
+          "priority": "B",
+          "syllabusReference": "Anexo VIII, Bloco III, Raciocínio Lógico",
+          "sourcePage": 25
+        }
+      ]
+    },
+    {
+      "id": "tjsp_RED",
+      "name": "Redação (prática)",
+      "icon": "book",
+      "colorClass": "indigo",
+      "topics": [
+        {
+          "id": "tjsp_RED_001",
+          "name": "[A] RED-001 — Interpretação da proposta e delimitação do tema",
+          "priority": "A",
+          "syllabusReference": "Capítulo da prova discursiva (não integra a lista de temas do Anexo VIII)",
+          "sourcePage": 26
+        },
+        {
+          "id": "tjsp_RED_002",
+          "name": "[A] RED-002 — Planejamento de tese e argumentos",
+          "priority": "A",
+          "syllabusReference": "Capítulo da prova discursiva (não integra a lista de temas do Anexo VIII)",
+          "sourcePage": 26
+        },
+        {
+          "id": "tjsp_RED_003",
+          "name": "[A] RED-003 — Introdução dissertativo-argumentativa",
+          "priority": "A",
+          "syllabusReference": "Capítulo da prova discursiva (não integra a lista de temas do Anexo VIII)",
+          "sourcePage": 26
+        },
+        {
+          "id": "tjsp_RED_004",
+          "name": "[A] RED-004 — Desenvolvimento e progressão das ideias",
+          "priority": "A",
+          "syllabusReference": "Capítulo da prova discursiva (não integra a lista de temas do Anexo VIII)",
+          "sourcePage": 26
+        },
+        {
+          "id": "tjsp_RED_005",
+          "name": "[A] RED-005 — Conclusão coerente",
+          "priority": "A",
+          "syllabusReference": "Capítulo da prova discursiva (não integra a lista de temas do Anexo VIII)",
+          "sourcePage": 26
+        },
+        {
+          "id": "tjsp_RED_006",
+          "name": "[A] RED-006 — Coesão, clareza e norma-padrão",
+          "priority": "A",
+          "syllabusReference": "Capítulo da prova discursiva (não integra a lista de temas do Anexo VIII)",
+          "sourcePage": 26
+        },
+        {
+          "id": "tjsp_RED_007",
+          "name": "[B] RED-007 — Revisão e reescrita de redação completa",
+          "priority": "B",
+          "syllabusReference": "Capítulo da prova discursiva (não integra a lista de temas do Anexo VIII)",
+          "sourcePage": 26
+        }
+      ]
+    }
+  ],
+  "rules": [
+    {
+      "sourceDiscipline": "Língua Portuguesa",
+      "sourceTopic": "Interpretação de texto",
+      "codes": [
+        "LP-001",
+        "LP-002",
+        "LP-003",
+        "LP-004",
+        "LP-005",
+        "LP-006",
+        "LP-007"
+      ],
+      "kind": "grupo",
+      "reason": "Interpretação ampla; o backup não discrimina os sete recortes.",
+      "completed": false
+    },
+    {
+      "sourceDiscipline": "Língua Portuguesa",
+      "sourceTopic": "Pontuação",
+      "codes": [
+        "LP-027"
+      ],
+      "kind": "direto",
+      "reason": "Pontuação corresponde ao tópico do PDF.",
+      "completed": true
+    },
+    {
+      "sourceDiscipline": "Língua Portuguesa",
+      "sourceTopic": "Classe de palavras",
+      "codes": [
+        "LP-012",
+        "LP-013",
+        "LP-014",
+        "LP-015",
+        "LP-016",
+        "LP-017",
+        "LP-018",
+        "LP-019",
+        "LP-020"
+      ],
+      "kind": "grupo",
+      "reason": "Classes de palavras agregadas; sem rateio nem conclusão automática de cada classe.",
+      "completed": false
+    },
+    {
+      "sourceDiscipline": "Língua Portuguesa",
+      "sourceTopic": "Concordância",
+      "codes": [
+        "LP-021",
+        "LP-022"
+      ],
+      "kind": "grupo",
+      "reason": "Concordância não discrimina verbal e nominal.",
+      "completed": false
+    },
+    {
+      "sourceDiscipline": "Língua Portuguesa",
+      "sourceTopic": "Regência",
+      "codes": [
+        "LP-023",
+        "LP-024"
+      ],
+      "kind": "grupo",
+      "reason": "Regência não discrimina verbal e nominal.",
+      "completed": false
+    },
+    {
+      "sourceDiscipline": "Língua Portuguesa",
+      "sourceTopic": "Crase",
+      "codes": [
+        "LP-026"
+      ],
+      "kind": "direto",
+      "reason": "Crase corresponde ao tópico do PDF.",
+      "completed": true
+    },
+    {
+      "sourceDiscipline": "Língua Portuguesa",
+      "sourceTopic": "Colocação Pronominal",
+      "codes": [
+        "LP-025"
+      ],
+      "kind": "direto",
+      "reason": "Colocação pronominal corresponde ao tópico do PDF.",
+      "completed": true
+    },
+    {
+      "sourceDiscipline": "Língua Portuguesa",
+      "sourceTopic": "Tempos e modos verbais",
+      "codes": [
+        "LP-017"
+      ],
+      "kind": "direto",
+      "reason": "Tempos e modos verbais correspondem ao tópico do PDF.",
+      "completed": true
+    },
+    {
+      "sourceDiscipline": "Língua Portuguesa",
+      "sourceTopic": "Coesão e Coerência",
+      "codes": [
+        "LP-007",
+        "LP-008"
+      ],
+      "kind": "grupo",
+      "reason": "Coesão/coerência contribuem para organização textual e conectivos; sem discriminação.",
+      "completed": false
+    },
+    {
+      "sourceDiscipline": "Raciocínio Lógico e matemática aplicada",
+      "sourceTopic": "1. Proposições",
+      "codes": [
+        "RL-004"
+      ],
+      "kind": "parcial",
+      "reason": "Proposições são parte de estruturas lógicas; não comprovam o tópico inteiro.",
+      "completed": false
+    },
+    {
+      "sourceDiscipline": "Raciocínio Lógico e matemática aplicada",
+      "sourceTopic": "2. Sequências",
+      "codes": [
+        "RL-008",
+        "RL-009"
+      ],
+      "kind": "grupo",
+      "reason": "Sequências sem identificação de numéricas ou figurais.",
+      "completed": false
+    },
+    {
+      "sourceDiscipline": "Raciocínio Lógico e matemática aplicada",
+      "sourceTopic": "4. Frações",
+      "codes": [
+        "MAT-001"
+      ],
+      "kind": "parcial",
+      "reason": "Frações integram operações com números reais, sem cobrir todo o tópico.",
+      "completed": false
+    },
+    {
+      "sourceDiscipline": "Raciocínio Lógico e matemática aplicada",
+      "sourceTopic": "5. Porcentagem",
+      "codes": [
+        "MAT-005"
+      ],
+      "kind": "direto",
+      "reason": "Porcentagem concluída na origem, mas sem horas registradas.",
+      "completed": true
+    },
+    {
+      "sourceDiscipline": "Raciocínio Lógico e matemática aplicada",
+      "sourceTopic": "6. Razão e proporção",
+      "codes": [
+        "MAT-004"
+      ],
+      "kind": "direto",
+      "reason": "Razão e proporção correspondem ao tópico do PDF.",
+      "completed": true
+    },
+    {
+      "sourceDiscipline": "Raciocínio Lógico e matemática aplicada",
+      "sourceTopic": "7. Regra de três simples e composta",
+      "codes": [
+        "MAT-006",
+        "MAT-007"
+      ],
+      "kind": "direto",
+      "reason": "Origem explicita regra de três simples e composta; ambas concluídas, sem horas.",
+      "completed": true
+    },
+    {
+      "sourceDiscipline": "Raciocínio Lógico e matemática aplicada",
+      "sourceTopic": "8. Média simples e ponderada",
+      "codes": [
+        "MAT-008",
+        "MAT-009"
+      ],
+      "kind": "direto",
+      "reason": "Origem explicita média simples e ponderada; ambas concluídas, sem horas.",
+      "completed": true
+    },
+    {
+      "sourceDiscipline": "Raciocínio Lógico e matemática aplicada",
+      "sourceTopic": "9. Medidas e conversões",
+      "codes": [
+        "MAT-016"
+      ],
+      "kind": "direto",
+      "reason": "Medidas e conversões correspondem a sistemas de medidas usuais; sem horas.",
+      "completed": true
+    },
+    {
+      "sourceDiscipline": "Direito Constitucional, administrativo, poder de policia e processo administrativo",
+      "sourceTopic": "1. Principios Administração Pública",
+      "codes": [
+        "DC-004"
+      ],
+      "kind": "parcial",
+      "reason": "Princípios de Administração Pública são parte do art. 37; regras restantes exigem revisão.",
+      "completed": false
+    },
+    {
+      "sourceDiscipline": "Direito Constitucional, administrativo, poder de policia e processo administrativo",
+      "sourceTopic": "3. Servidores Públicos",
+      "codes": [
+        "DC-005",
+        "DC-006"
+      ],
+      "kind": "grupo",
+      "reason": "Servidores públicos: apenas base geral; sem comprovação dos arts. 38–41 ou das regras estaduais.",
+      "completed": false
+    }
+  ]
+}
