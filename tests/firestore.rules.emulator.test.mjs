@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
 import { createBackup, inspectBackup } from '../src/backup.ts';
+import { prepareRecovery } from '../src/backupRecovery.ts';
 
 const PROJECT_ID = 'demo-estudei-tjsp';
 const RULES = readFileSync('firestore.rules', 'utf8');
@@ -129,4 +130,55 @@ test('backup v3 reúne perfil e caderno real do emulador, sem perder flashcard',
   assert.equal(inspection.profileCount,1);
   assert.equal(inspection.errorNotes,1);
   assert.equal(inspection.flashcards,1);
+});
+
+test('cópia restaurada mantém histórico e flashcards sem alterar o plano de origem', async () => {
+  const owner=await setupUser('alice','tjsp');
+  const sourceRef=doc(owner,'users/alice/profiles/tjsp');
+  const originalLog={id:'e1',disciplineId:'penal',topicId:'peculato',questionsCount:20,correctAnswers:18,wrongAnswers:2};
+  await assertSucceeds(updateDoc(sourceRef,{
+    exerciseLogs:[originalLog],
+    activityLogs:[{id:'a1',timeSpentMin:120}],
+    examName:'TJSP',
+  }));
+  await assertSucceeds(setDoc(doc(owner,'users/alice/profiles/tjsp/errors/erro1'),errorNote('erro1','tjsp')));
+  const currentSource=(await getDoc(sourceRef)).data();
+  const currentErrors=await getDocs(collection(owner,'users/alice/profiles/tjsp/errors'));
+
+  const backup=await createBackup({
+    user:(await getDoc(doc(owner,'users/alice'))).data(),
+    profiles:[{
+      documentId:'tjsp',data:currentSource,
+      errors:currentErrors.docs.map(note=>({documentId:note.id,data:note.data()})),
+    }]
+  });
+  const plan=await prepareRecovery(backup,'tjsp','recovered_tjsp');
+
+  // Exercise the exact structure produced by the recovery preparer against
+  // the real security rules, in a mock project only. This never deploys.
+  const recoveredRef=doc(owner,'users/alice/profiles/recovered_tjsp');
+  await assertSucceeds(setDoc(recoveredRef,plan.profile));
+  for(const note of plan.errors) {
+    await assertSucceeds(setDoc(doc(owner,'users/alice/profiles/recovered_tjsp/errors',note.documentId),note.data));
+  }
+
+  const [original,recovered,notes] = await Promise.all([
+    getDoc(sourceRef),getDoc(recoveredRef),
+    getDocs(collection(owner,'users/alice/profiles/recovered_tjsp/errors'))
+  ]);
+  assert.equal(original.data()?.name,'TJSP homologação');
+  assert.equal(original.data()?.id,'tjsp');
+  assert.deepEqual(recovered.data()?.exerciseLogs,[originalLog]);
+  assert.deepEqual(recovered.data()?.activityLogs,[{id:'a1',timeSpentMin:120}]);
+  assert.equal(recovered.data()?.name,'TJSP homologação (recuperado)');
+  assert.equal(notes.size,1);
+  assert.equal(notes.docs[0].data().profileId,'recovered_tjsp');
+  assert.equal(notes.docs[0].data().front,'Qual é o requisito central?');
+  assert.equal(notes.docs[0].data().status,'aberto');
+  assert.equal((await getDocs(collection(owner,'users/alice/profiles/tjsp/errors'))).size,1);
+
+  // The restored and original plans remain inaccessible to other users.
+  const other=environment.authenticatedContext('bob').firestore();
+  await assertFails(getDoc(doc(other,'users/alice/profiles/recovered_tjsp')));
+  await assertFails(getDocs(collection(other,'users/alice/profiles/recovered_tjsp/errors')));
 });
