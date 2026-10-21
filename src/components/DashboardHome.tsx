@@ -40,6 +40,7 @@ import { Discipline, Reminder, ActivityLog, StreakDay, ExerciseLog } from '../ty
 import { MOTIVATIONAL_QUOTES } from '../data';
 import { formatMinutes, formatHours, getLocalDateString, getLogDateKey, formatTopicName } from '../utils';
 import { getStudyTopics } from '../studyOrder';
+import StudyTopicOptions from './StudyTopicOptions';
 
 interface DashboardHomeProps {
   disciplines: Discipline[];
@@ -3007,9 +3008,7 @@ export default function DashboardHome({
                       className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 dark:text-white rounded-lg focus:outline-none focus:border-primary font-bold text-slate-700 dark:text-slate-200"
                     >
                       <option value="">Geral / Sem Tópico Específico</option>
-                      {getStudyTopics(disciplines.find(d => d.id === studyDisciplineId)).map((t, index) => (
-                        <option key={t.id} value={t.id}>{index + 1}- {formatTopicName(t.name)}</option>
-                      ))}
+                      <StudyTopicOptions discipline={disciplines.find(d => d.id === studyDisciplineId)} />
                     </select>
                   </div>
 

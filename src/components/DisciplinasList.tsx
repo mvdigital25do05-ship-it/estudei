@@ -31,6 +31,9 @@ import {
 import { Discipline, Topic, ExerciseLog, ActivityLog } from '../types';
 import { formatMinutes, formatTopicName } from '../utils';
 import { getStudyTopics, hasRecommendedStudyOrder } from '../studyOrder';
+import { hasTopicGroups, setContentCompletion } from '../topicGroups';
+import StudyTopicsTree from './StudyTopicsTree';
+import StudyTopicOptions from './StudyTopicOptions';
 
 interface DisciplinasListProps {
   disciplines: Discipline[];
@@ -526,7 +529,7 @@ export default function DisciplinasList({
                       {d.name}
                     </h3>
                     <p className="font-sans text-[11px] text-slate-400 font-bold mt-1">
-                      {d.topicsDone} de {d.topicsTotal} Tópicos Concluídos
+                      {d.topicsDone} de {d.topicsTotal} {hasTopicGroups(d) ? 'Assuntos Concluídos' : 'Tópicos Concluídos'}
                     </p>
                   </div>
                 </div>
@@ -964,9 +967,7 @@ export default function DisciplinasList({
                       className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 dark:text-white rounded-lg focus:outline-none focus:border-primary font-semibold text-slate-800 animate-fade-in"
                       required
                     >
-                      {getStudyTopics(disciplines.find(d => d.id === exFormDisciplineId)).map((t, index) => (
-                        <option key={t.id} value={t.id}>{index + 1}- {formatTopicName(t.name)}</option>
-                      ))}
+                      <StudyTopicOptions discipline={disciplines.find(d => d.id === exFormDisciplineId)} />
                       <option value="custom">+ Cadastrar Novo Tópico...</option>
                     </select>
                   )}
@@ -1291,17 +1292,17 @@ export default function DisciplinasList({
                   />
                 </div>
                 <div className="text-[10px] text-slate-400 font-medium pt-0.5">
-                  {activeDiscipline.topicsDone} concluídos de {activeDiscipline.topicsTotal} tópicos cadastrados
+                  {activeDiscipline.topicsDone} concluídos de {activeDiscipline.topicsTotal} {hasTopicGroups(activeDiscipline) ? 'assuntos cadastrados' : 'tópicos cadastrados'}
                 </div>
               </div>
 
               {/* Interactive Topics Checklist Section */}
               <div className="space-y-2">
                 <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-                  {hasRecommendedStudyOrder(activeDiscipline) ? 'Ordem recomendada de estudo' : 'Lista Customizada de Tópicos'}
+                  {hasTopicGroups(activeDiscipline) ? 'Tópicos e subtópicos do conteúdo programático' : hasRecommendedStudyOrder(activeDiscipline) ? 'Ordem recomendada de estudo' : 'Lista Customizada de Tópicos'}
                 </label>
                 {hasRecommendedStudyOrder(activeDiscipline) && <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Sequência provisória que combina prioridades de conteúdo e pré-requisitos. Tópicos concluídos continuam marcados.
+                  Divisão do checklist fornecido, em sequência provisória de prioridade e pré-requisitos. Cada assunto mantém seu progresso.
                 </p>}
                 
                 {/* Add dynamic topic form */}
@@ -1329,7 +1330,19 @@ export default function DisciplinasList({
                 </div>
 
                 {/* Topics scroll area */}
-                {activeDiscipline.topics && activeDiscipline.topics.length > 0 ? (
+                {hasTopicGroups(activeDiscipline) ? <StudyTopicsTree
+                  discipline={activeDiscipline} activities={activityLogs} exercises={exerciseLogs}
+                  onSetCompletion={(ids, completed) => {
+                    onUpdateDiscipline(setContentCompletion(activeDiscipline, ids, completed));
+                  }}
+                  onRename={(id, name) => onUpdateDiscipline({ ...activeDiscipline, topics: activeDiscipline.topics.map(t => t.id === id ? { ...t, name } : t) })}
+                  onDelete={handleDeleteTopic}
+                  onToggleSubtopic={handleToggleSubtopic}
+                  onAdd={(studyGroupId, name) => {
+                    const topics = [...activeDiscipline.topics, { id: `topic_${crypto.randomUUID()}`, name, completed: false, studyGroupId }];
+                    onUpdateDiscipline({ ...activeDiscipline, topics, topicsTotal: topics.length, topicsDone: topics.filter(t => t.completed).length });
+                  }}
+                /> : activeDiscipline.topics && activeDiscipline.topics.length > 0 ? (
                   <div className="bg-slate-50 border border-slate-100 p-2 rounded-xl max-h-[285px] overflow-y-auto space-y-1.5">
                     {getStudyTopics(activeDiscipline).map((topic, index) => {
                       const topicExerciseLogs = exerciseLogs.filter(log => log.topicId === topic.id);

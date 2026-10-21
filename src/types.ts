@@ -14,6 +14,7 @@ export interface Topic {
   name: string;
   completed: boolean;
   subtopics?: Subtopic[];
+  studyGroupId?: string;
 }
 
 export interface Discipline {
