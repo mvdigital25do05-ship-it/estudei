@@ -9,7 +9,7 @@ import { prepareRecovery } from '../backupRecovery';
  * Backup e inspeção locais. Nenhuma operação de importação/restauração é
  * realizada por este componente. Todas as leituras do banco exigem login.
  */
-export default function BackupButton() {
+export default function BackupButton({canExport}: {canExport: boolean}) {
   const [working, setWorking] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState('');
@@ -23,7 +23,7 @@ export default function BackupButton() {
 
   const exportBackup = async () => {
     const user = auth.currentUser;
-    if (!user || working || checking) return;
+    if (!user || working || checking || !canExport) return;
     setWorking(true);
     setError('');
 
@@ -134,8 +134,8 @@ export default function BackupButton() {
         <button
           type="button"
           onClick={exportBackup}
-          disabled={working || checking}
-          title="Exportar perfis, históricos e cadernos de erros em JSON v3"
+          disabled={working || checking || !canExport}
+          title={canExport ? "Exportar perfis, históricos e cadernos de erros em JSON v3" : "Aguarde a sincronização com a nuvem antes do backup"}
           className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
         >
           {working ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
@@ -161,6 +161,7 @@ export default function BackupButton() {
         </button>
       </div>
 
+      {!canExport && <p className="max-w-sm text-right text-[11px] text-amber-700 dark:text-amber-300">Aguarde a confirmação do salvamento na nuvem antes de exportar o backup.</p>}
       {error && <p role="alert" className="max-w-sm text-right text-[11px] text-rose-600">{error}</p>}
       {inspection && (
         <div
