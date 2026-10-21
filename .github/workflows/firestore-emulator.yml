@@ -41,7 +41,7 @@ jobs:
           ./node_modules/.bin/firebase emulators:exec
           --config firebase.named.emulator.json
           --project demo-estudei-tjsp
-          --only firestore
+          --only firestore,auth
           'node --import tsx --test tests/firestore.named.emulator.test.mjs'
       - name: Testar regras no Firestore Emulator (projeto fictício)
         env:
