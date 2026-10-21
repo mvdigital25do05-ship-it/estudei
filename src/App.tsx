@@ -1372,7 +1372,7 @@ export default function App() {
       wrongAnswers: 0,
       questionsSolved: 0
     };
-    setActivityLogs([newLog, ...activityLogs]);
+    setActivityLogs(current => [newLog, ...current]);
   };
 
   const handleLogStudySession = (session: {
