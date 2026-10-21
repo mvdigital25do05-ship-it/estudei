@@ -85,3 +85,33 @@ Os novos registros devem ser armazenados em coleções separadas ou estrutura pa
 - `npm test`
 - `npm run build`
 - Revisão manual do seletor de prioridade/fase e confirmação do salvamento/recarga dos campos no ambiente de teste autenticado.
+
+## Etapa 3: importação não destrutiva + questões + Anki (branch)
+
+### Importador de edital
+
+- `src/outlineImport.ts`: aceita tabela TSV copiada de planilha ou JSON com `rows`. Cada linha possui `discipline`, `topic`, `subtopic` (opcional) e `priority` (A/B/C opcional).
+- Origem/versão da classificação deve ser informada; o sistema **não verifica** automaticamente se a lista corresponde integralmente ao edital.
+- A mesclagem é calculada localmente (prévia). Confirmação exige declarar que foi realizado backup prévio.
+- Disciplinas e tópicos com nomes normalizados iguais reutilizam os mesmos identificadores. Não se apagam questões, horas, históricos, fases, nem o estado de conclusão já registrado.
+- Importar duas vezes a mesma lista é idempotente. Se houver nomes ambíguos ou prioridades conflitantes, a importação é bloqueada.
+- Uma edição realizada pela importação ainda é armazenada no documento legado do perfil; antes de importar listas grandes, conferir limites do Firestore e a exportação de backup.
+
+**O que falta:** elaborar e auditar uma matriz completa e atualizada do Anexo VIII do Edital TJSP 02/2026. O importador está pronto para recebê-la, mas a base não foi preenchida com supostos tópicos completos ou classificações sem conferência.
+
+### Registro de questões e flashcards
+
+- Campos `examBoard`, `isNewQuestions` e `createdAtMs` para novos blocos de questões.
+- Formulário permite diferenciar questões inéditas das repetidas, inclusive para não presumir retrospectivamente a origem das questões dos registros antigos.
+- Corrigida a associação entre registro e ID do novo tópico.
+- Para blocos com pelo menos um erro: causa principal, pergunta curta e resposta para **um flashcard por bloco**.
+- `src/ankiExport.ts` prepara texto UTF-8 TSV com instruções de importação para Anki e etiquetas por disciplina, tópico e banca, descartando duplicatas e entradas incompletas.
+- A exportação é feita localmente no navegador; não envia questões ou cartões a serviços externos.
+- Os cartões permanecem dentro dos registros de exercícios do perfil **até existir uma migração segura para um banco de erros individualizado**. Portanto, ainda se aplicam os limites do documento legado.
+
+### Segurança e validação
+
+- Executar `npm ci`, `npm run lint`, `npm test`, `npm run build`.
+- Testes unitários de importação, duplicidades, preservação de IDs, prioridades, exportação e rejeição de cartões inválidos.
+- Realizar teste manual de exportação real do Firestore, importação em perfil de teste, recarga de dados e importação no Anki antes de publicação.
+- Não alterar o projeto Firebase de produção nem integrar o PR à `main` antes de validação manual.
