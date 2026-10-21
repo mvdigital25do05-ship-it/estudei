@@ -32,6 +32,8 @@ import {
 import { Discipline, Topic, ExerciseLog, ActivityLog, ExamPriority, LearningPhase } from '../types';
 import { buildTopicDiagnostics, PHASE_LABELS } from '../studyStrategy';
 import OutlineImportPanel from './OutlineImportPanel';
+import PriorityEvidencePanel from './PriorityEvidencePanel';
+import type { PriorityAssignment, PriorityEvidenceImport } from '../priorityEvidence';
 import type { OutlineInput } from '../outlineImport';
 import { exportAnkiText } from '../ankiExport';
 import { formatMinutes } from '../utils';
@@ -42,6 +44,7 @@ interface DisciplinasListProps {
   onDeleteDiscipline: (id: string) => void;
   onUpdateDiscipline: (d: Discipline) => void;
   onImportOutline: (outline: OutlineInput) => void;
+  onPriorityEvidence: (evidence: PriorityEvidenceImport, assignments: PriorityAssignment[]) => void;
   exerciseLogs: ExerciseLog[];
   activityLogs?: ActivityLog[];
   onAddExerciseLog: (log: Omit<ExerciseLog, 'id' | 'date'>, shouldCreateTopic?: boolean) => void;
@@ -65,6 +68,7 @@ export default function DisciplinasList({
   onDeleteDiscipline, 
   onUpdateDiscipline,
   onImportOutline,
+  onPriorityEvidence,
   exerciseLogs,
   activityLogs = [],
   onAddExerciseLog,
@@ -592,7 +596,10 @@ export default function DisciplinasList({
       </div>
 
       {showImportPanel && (
-        <OutlineImportPanel disciplines={disciplines} onApply={onImportOutline} />
+        <div className="space-y-3">
+          <OutlineImportPanel disciplines={disciplines} onApply={onImportOutline} />
+          <PriorityEvidencePanel disciplines={disciplines} onApply={onPriorityEvidence} />
+        </div>
       )}
       {ankiMessage && <p role="status" className="text-xs text-slate-600 dark:text-slate-300">{ankiMessage}</p>}
 
