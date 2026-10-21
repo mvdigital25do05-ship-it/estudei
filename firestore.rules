@@ -132,7 +132,10 @@ service cloud.firestore {
           && isValidId(profileId);
 
         match /errors/{errorId} {
-          allow get, list: if isOwner(userId) && isValidId(profileId) && isValidId(errorId);
+          // A collection query does not bind a concrete errorId. Validate
+          // errorId only on document-level get/create/update/delete.
+          allow get: if isOwner(userId) && isValidId(profileId) && isValidId(errorId);
+          allow list: if isOwner(userId) && isValidId(profileId);
           allow create: if isOwner(userId) && isValidId(profileId) && isValidId(errorId)
             && exists(/databases/$(database)/documents/users/$(userId)/profiles/$(profileId))
             && isValidErrorNote(incoming())
