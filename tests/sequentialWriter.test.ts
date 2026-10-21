@@ -6,10 +6,13 @@ test('two writes to the same document complete in call order', async () => {
   const writer = createSequentialWriter();
   const order: string[] = [];
   let release!: () => void;
+  let notifyStarted!: () => void;
   const gate = new Promise<void>(resolve => { release = resolve; });
+  const started = new Promise<void>(resolve => { notifyStarted = resolve; });
 
   const one = writer.enqueue('profile/1', async () => {
     order.push('one start');
+    notifyStarted();
     await gate;
     order.push('one done');
   });
@@ -18,7 +21,7 @@ test('two writes to the same document complete in call order', async () => {
     order.push('two done');
   });
 
-  await Promise.resolve();
+  await started;
   assert.deepEqual(order, ['one start']);
   release();
   await Promise.all([one, two]);
