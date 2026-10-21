@@ -2,12 +2,13 @@ import React, { useMemo } from 'react';
 import type { ActivityLog, Discipline, ExerciseLog } from '../types';
 import { buildTopicDiagnostics, PHASE_LABELS } from '../studyStrategy';
 import { formatMinutes, getLocalDateString, getLogDateKey } from '../utils';
-import { BarChart3, BookOpenCheck, CalendarDays, Info, Target } from 'lucide-react';
+import { ArrowRight, BarChart3, BookOpenCheck, CalendarDays, Info, Target } from 'lucide-react';
 
 interface StudyIntelligenceProps {
   disciplines: Discipline[];
   exerciseLogs: ExerciseLog[];
   activityLogs: ActivityLog[];
+  onStartTopic?: (disciplineId: string, topicId: string) => void;
 }
 
 const urgencyStyle = {
@@ -16,7 +17,7 @@ const urgencyStyle = {
   C: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300',
 };
 
-export default function StudyIntelligence({ disciplines, exerciseLogs, activityLogs }: StudyIntelligenceProps) {
+export default function StudyIntelligence({ disciplines, exerciseLogs, activityLogs, onStartTopic }: StudyIntelligenceProps) {
   const insights = useMemo(() => {
     const topics = buildTopicDiagnostics(disciplines, exerciseLogs);
     const lastSevenDays = new Set<string>();
@@ -73,6 +74,37 @@ export default function StudyIntelligence({ disciplines, exerciseLogs, activityL
           </div>
         </div>
       </div>
+
+      {insights.topics.length > 0 && (
+        <div className="mb-4 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-emerald-900 dark:bg-emerald-950/30">
+          <div className="min-w-0 flex-1">
+            <p className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-700 dark:text-emerald-300">
+              Sua próxima sessão sugerida
+            </p>
+            <h3 className="mt-1 text-base font-extrabold text-slate-900 dark:text-white">
+              {insights.topics[0].topicName}
+            </h3>
+            <p className="mt-0.5 text-xs font-semibold text-slate-600 dark:text-slate-300">
+              {insights.topics[0].disciplineName} · {PHASE_LABELS[insights.topics[0].phase]}
+            </p>
+            <p className="mt-2 text-xs text-slate-700 dark:text-slate-200">
+              {insights.topics[0].recommendation}
+            </p>
+            {insights.topics[0].examPriority === null && (
+              <p className="mt-1 text-[10px] text-amber-700 dark:text-amber-300">
+                Ainda sem classificação de incidência histórica; sugestão baseada nos dados disponíveis.
+              </p>
+            )}
+          </div>
+          {onStartTopic && (
+            <button type="button"
+              onClick={() => onStartTopic(insights.topics[0].disciplineId, insights.topics[0].topicId)}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg bg-emerald-700 px-4 py-3 text-xs font-bold text-white transition-colors hover:bg-emerald-800">
+              Iniciar estudo <ArrowRight size={15} aria-hidden="true" />
+            </button>
+          )}
+        </div>
+      )}
 
       <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <div className="rounded-lg bg-slate-50 p-3 dark:bg-slate-800/60">
