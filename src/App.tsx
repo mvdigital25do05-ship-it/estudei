@@ -961,65 +961,62 @@ export default function App() {
   };
 
   const handleAddExerciseLog = (newLog: Omit<ExerciseLog, 'id' | 'date'>, shouldCreateTopic?: boolean) => {
-    const today = new Date();
+    const nowMs = Date.now();
+    const today = new Date(nowMs);
     const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const formattedDate = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
-    
-    let finalTopicId = newLog.topicId;
-    const finalTopicName = newLog.topicName;
-    
-    setDisciplines(discs => discs.map(d => {
-      if (d.id === newLog.disciplineId) {
-        const updatedTopics = [...d.topics];
-        
-        if (shouldCreateTopic && !d.topics.some(t => t.name.toLowerCase() === finalTopicName.toLowerCase())) {
-          const newTopicId = `topic_${Date.now()}`;
-          updatedTopics.push({
-            id: newTopicId,
-            name: finalTopicName,
-            completed: false
-          });
-          finalTopicId = newTopicId;
-        }
-        
-        return {
-          ...d,
-          topics: updatedTopics,
-          topicsTotal: updatedTopics.length,
-          correctAnswers: d.correctAnswers + newLog.correctAnswers,
-          wrongAnswers: d.wrongAnswers + newLog.wrongAnswers
-        };
-      }
-      return d;
+
+    // Resolve the ID BEFORE updating React state. The old implementation
+    // mutated finalTopicId inside a state setter; that updater may run later,
+    // creating an exercise log with a stale topic reference.
+    const currentDiscipline = disciplines.find(d => d.id === newLog.disciplineId);
+    const existingTopic = shouldCreateTopic
+      ? currentDiscipline?.topics.find(t =>
+          t.name.trim().toLocaleLowerCase('pt-BR') === newLog.topicName.trim().toLocaleLowerCase('pt-BR'))
+      : undefined;
+    const finalTopicId = existingTopic?.id || newLog.topicId;
+
+    setDisciplines(current => current.map(d => {
+      if (d.id !== newLog.disciplineId) return d;
+      const hasTopic = d.topics.some(t => t.id === finalTopicId ||
+        (shouldCreateTopic && t.name.trim().toLocaleLowerCase('pt-BR') === newLog.topicName.trim().toLocaleLowerCase('pt-BR')));
+      const updatedTopics = shouldCreateTopic && !hasTopic
+        ? [...d.topics, { id: finalTopicId, name: newLog.topicName, completed: false }]
+        : d.topics;
+      return {
+        ...d,
+        topics: updatedTopics,
+        topicsTotal: updatedTopics.length,
+        correctAnswers: d.correctAnswers + newLog.correctAnswers,
+        wrongAnswers: d.wrongAnswers + newLog.wrongAnswers
+      };
     }));
 
     const created: ExerciseLog = {
       ...newLog,
-      id: `exlog_${Date.now()}`,
+      id: `exlog_${nowMs}_${Math.random().toString(36).slice(2, 8)}`,
       topicId: finalTopicId,
+      createdAtMs: nowMs,
       date: formattedDate
     };
-    
-    setExerciseLogs(prev => [created, ...prev]);
+    setExerciseLogs(current => [created, ...current]);
 
-    // Create ActivityLog for unified tracking
-    const nowMs = Date.now();
-    const logDate = getLocalDateString(new Date(nowMs));
     const newActivity: ActivityLog = {
-      id: `log_ex_${nowMs}`,
+      id: `log_ex_${nowMs}_${Math.random().toString(36).slice(2, 8)}`,
       disciplineName: newLog.disciplineName,
       timeSpentMin: 0,
       timestamp: 'Agora mesmo',
       details: `Resolveu ${newLog.questionsCount} questões (${newLog.correctAnswers} acertos / ${newLog.wrongAnswers} erros) - Tópico: ${newLog.topicName}`,
       colorClass: 'purple',
       createdAtMs: nowMs,
-      date: logDate,
+      date: getLocalDateString(today),
       questionsSolved: newLog.questionsCount,
+      topicId: finalTopicId,
       correctAnswers: newLog.correctAnswers,
       wrongAnswers: newLog.wrongAnswers,
       studyType: 'Questões'
     };
-    setActivityLogs(prev => [newActivity, ...prev]);
+    setActivityLogs(current => [newActivity, ...current]);
   };
 
   const handleDeleteExerciseLog = (logId: string) => {
