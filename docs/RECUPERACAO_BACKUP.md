@@ -68,3 +68,35 @@ não implementa um fluxo de restauração transacional completo.
 
 **Não foi feito acesso, importação nem escrita no Firebase de produção.**
 O PR continua em rascunho, sem merge em `main`.
+
+## Etapa seguinte: restauração atômica em código (ainda não ativada)
+
+O módulo `src/atomicRecovery.ts` implementa
+`restoreBackupAtomically(db, authenticatedUid, backup, sourceProfileId)`:
+
+1. Prepara e valida um plano v3 íntegro e gera ID aleatório para destino.
+2. Faz leitura transacional do novo ID e **recusa qualquer colisão**.
+3. Cria, em **uma transação Firestore**, o novo plano e todos os erros
+   individuais associados. O limite já existente de 400 erros permanece.
+4. Se a transação falhar, nenhuma criação daquele grupo é confirmada.
+   Planos anteriores e dados da conta não são alterados.
+
+Para que o mesmo commit seja aceito sem relaxar a segurança, a regra da
+subcoleção passa a exigir `existsAfter()` para o documento de perfil pai,
+em vez de `exists()`. Isso permite validar a existência do pai **após**
+a transação; continua recusando registros órfãos.
+
+**Testes incluídos:** atomicidade de perfil + notas, rejeição de falta
+de permissão sem criação, preservação do original e rejeição de erro sem
+perfil pai, no Firestore Emulator. Há também verificação da operação no
+banco nomeado com Authentication Emulator.
+
+**Limitações importantes:** a operação ainda não foi exposta como ação
+no aplicativo para usuários reais, não executa recuperação no projeto
+Firebase de produção e não substitui a validação final num projeto
+homologado separado. Transações possuem limites da plataforma e exigem
+rede; a interface futura deverá mostrar confirmação específica e atualizar
+os planos **somente após** a gravação confirmada.
+
+O uso real depende de publicação segura das novas regras no banco nomeado
+correto e autorização explícita para a operação.
