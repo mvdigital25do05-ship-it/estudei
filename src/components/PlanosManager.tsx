@@ -22,9 +22,9 @@ interface PlanosManagerProps {
   profiles: CargoPlan[];
   activeProfileId: string;
   onSwitchProfile: (id: string) => void;
-  onCreateProfile: (name: string, templateType: string, initialDisciplines?: Discipline[]) => void;
+  onCreateProfile: (name: string, templateType: string, initialDisciplines?: Discipline[]) => Promise<boolean>;
   onDeleteProfile: (id: string) => void;
-  onUpdateProfileName: (id: string, newName: string) => void;
+  onUpdateProfileName: (id: string, newName: string) => Promise<boolean>;
 }
 
 export default function PlanosManager({
@@ -41,6 +41,8 @@ export default function PlanosManager({
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState('');
+  const [submittingPlan, setSubmittingPlan] = useState(false);
+  const [submittingName, setSubmittingName] = useState(false);
 
   // Form state for enqueuing initial subjects & topics
   const [enqueuedDisciplines, setEnqueuedDisciplines] = useState<Discipline[]>([]);
@@ -90,13 +92,20 @@ export default function PlanosManager({
   };
 
   // Handle submit new cargo plan
-  const handleCreateSubmit = (e: React.FormEvent) => {
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newPlanName.trim()) return;
-    onCreateProfile(newPlanName.trim(), newPlanTemplate, enqueuedDisciplines);
-    setNewPlanName('');
-    setEnqueuedDisciplines([]);
-    setShowAddModal(false);
+    if (!newPlanName.trim() || submittingPlan) return;
+    setSubmittingPlan(true);
+    try {
+      const created = await onCreateProfile(newPlanName.trim(), newPlanTemplate, enqueuedDisciplines);
+      if (created) {
+        setNewPlanName('');
+        setEnqueuedDisciplines([]);
+        setShowAddModal(false);
+      }
+    } finally {
+      setSubmittingPlan(false);
+    }
   };
 
   // Start editing cargo name
@@ -106,10 +115,15 @@ export default function PlanosManager({
   };
 
   // Save edited name
-  const handleSaveEdit = (id: string) => {
-    if (!editNameValue.trim()) return;
-    onUpdateProfileName(id, editNameValue.trim());
-    setEditingId(null);
+  const handleSaveEdit = async (id: string) => {
+    if (!editNameValue.trim() || submittingName) return;
+    setSubmittingName(true);
+    try {
+      const saved = await onUpdateProfileName(id, editNameValue.trim());
+      if (saved) setEditingId(null);
+    } finally {
+      setSubmittingName(false);
+    }
   };
 
   // Helper to calculate statistics for a profile
