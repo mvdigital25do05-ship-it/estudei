@@ -143,7 +143,10 @@ function appearance(name: string): Pick<Discipline, 'icon' | 'colorClass'> {
 export function previewOutlineMerge(existing: Discipline[], input: OutlineInput): OutlinePreview {
   const data: Discipline[] = existing.map(discipline => ({
     ...discipline,
-    topics: discipline.topics.map(topic => ({ ...topic, subtopics: topic.subtopics?.map(sub => ({ ...sub })) })),
+    topics: discipline.topics.map(topic => ({
+      ...topic,
+      ...(topic.subtopics ? { subtopics: topic.subtopics.map(sub => ({ ...sub })) } : {})
+    })),
   }));
   const stats: OutlineStats = {
     newDisciplines: 0, newTopics: 0, newSubtopics: 0, priorityChanges: 0, untouched: 0,
