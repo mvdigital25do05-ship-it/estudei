@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Menu, 
   Search, 
@@ -39,10 +39,15 @@ import PlanejamentoSchedule from './components/PlanejamentoSchedule';
 import SimuladosQuestoes from './components/SimuladosQuestoes';
 
 // Firebase imports
-import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, getDocs, setDoc, deleteDoc, collection, limit, query } from 'firebase/firestore';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import AuthScreen from './components/AuthScreen';
 import BackupButton from './components/BackupButton';
+import ErrorNotebook from './components/ErrorNotebook';
+import { previewOutlineMerge, type OutlineInput } from './outlineImport';
+import { previewPriorityAssignments, type PriorityAssignment, type PriorityEvidenceImport } from './priorityEvidence';
+import { createSequentialWriter } from './sequentialWriter';
+import { captureProfileSnapshot } from './profilePersistence';
 
 export default function App() {
   // Navigation active state
@@ -89,6 +94,25 @@ export default function App() {
   // Cloud Saving Status Indicators
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [saveErrorMsg, setSaveErrorMsg] = useState<string>('');
+  const saveQueueRef = useRef(createSequentialWriter());
+  const pendingWritesRef = useRef(0);
+  const pendingDebouncesRef = useRef(0);
+  // A deleted profile must never be silently recreated by a late autosave.
+  const deletedProfileIdsRef = useRef(new Set<string>());
+  const profileSwitchInProgressRef = useRef(false);
+
+  const beginSave = () => {
+    pendingWritesRef.current++;
+    setSaveStatus('saving');
+  };
+
+  const finishSave = (failed: boolean) => {
+    pendingWritesRef.current = Math.max(0, pendingWritesRef.current - 1);
+    if (failed) setSaveStatus('error');
+    else if (pendingWritesRef.current === 0 && pendingDebouncesRef.current === 0) {
+      setSaveStatus(previous => previous === 'saving' ? 'saved' : previous);
+    }
+  };
 
   // Auto open discipline creation modal state
   const [autoOpenAddDiscipline, setAutoOpenAddDiscipline] = useState<boolean>(false);
@@ -165,10 +189,12 @@ export default function App() {
           // Set active sets
           setProfiles(loadedProfiles);
           setReminders(loadedReminders);
-          setActiveProfileId(activeProfile);
+          // Resolve invalid/missing selected ID before allowing autosave.
+          // Never create a phantom profile using a stale activeProfileId.
+          const targetProfile = loadedProfiles.find(p => p.id === activeProfile) || loadedProfiles[0];
+          setActiveProfileId(targetProfile?.id || '');
 
           // Hydrate dynamic views states
-          const targetProfile = loadedProfiles.find(p => p.id === activeProfile) || loadedProfiles[0];
           if (targetProfile) {
             setDisciplines(targetProfile.disciplines || []);
             setMockTests(targetProfile.mockTests || []);
@@ -306,65 +332,100 @@ export default function App() {
     if (!isLoaded || !user) return;
 
     const syncUserData = async () => {
-      setSaveStatus('saving');
+      beginSave();
+      let failed = false;
       try {
         const userRef = doc(db, 'users', user.uid);
-        await setDoc(userRef, sanitizeForFirestore({
-          activeProfileId: activeProfileId || '',
-          reminders: reminders || [],
-          name: user.displayName || 'Estudante',
-          email: user.email || ''
-        }), { merge: true });
-        setSaveStatus(prev => prev === 'saving' ? 'saved' : prev);
+        await saveQueueRef.current.enqueue(`user/${user.uid}`, () =>
+          setDoc(userRef, sanitizeForFirestore({
+            activeProfileId: activeProfileId || '',
+            reminders: reminders || [],
+            name: user.displayName || 'Estudante',
+            email: user.email || ''
+          }), { merge: true })
+        );
       } catch (error) {
-        setSaveStatus('error');
+        failed = true;
         setSaveErrorMsg(error instanceof Error ? error.message : String(error));
         console.error("Erro salvando metadados do usuário:", error);
         handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
+      } finally {
+        finishSave(failed);
       }
     };
 
-    const timeout = setTimeout(syncUserData, 600);
-    return () => clearTimeout(timeout);
+    // Mark dirty at edit time, not 600ms later: backups must not export
+    // a cloud snapshot before the pending debounce has actually persisted.
+    pendingDebouncesRef.current++;
+    setSaveStatus('saving');
+    let scheduled = true;
+    const timeout = setTimeout(() => {
+      scheduled = false;
+      pendingDebouncesRef.current = Math.max(0, pendingDebouncesRef.current - 1);
+      void syncUserData();
+    }, 600);
+    return () => {
+      clearTimeout(timeout);
+      if (scheduled) {
+        pendingDebouncesRef.current = Math.max(0, pendingDebouncesRef.current - 1);
+      }
+    };
   }, [activeProfileId, reminders, isLoaded, user]);
 
   useEffect(() => {
-    if (!isLoaded || !user || !activeProfileId) return;
+    if (!isLoaded || !user || !activeProfileId || deletedProfileIdsRef.current.has(activeProfileId)) return;
 
     const syncProfileData = async () => {
-      setSaveStatus('saving');
+      if (deletedProfileIdsRef.current.has(activeProfileId)) return;
+      beginSave();
+      let failed = false;
       try {
         const profileRef = doc(db, 'users', user.uid, 'profiles', activeProfileId);
         const currentProfile = profiles.find(p => p.id === activeProfileId);
         const name = currentProfile?.name || 'Meu Concurso';
         const createdAt = currentProfile?.createdAt || '25 Mai 2026';
         
-        await setDoc(profileRef, sanitizeForFirestore({
-          id: activeProfileId,
-          name,
-          disciplines: disciplines || [],
-          mockTests: mockTests || [],
-          exerciseLogs: exerciseLogs || [],
-          activityLogs: activityLogs || [],
-          studyBlocks: studyBlocks || [],
-          weeklyHours: weeklyHours || { done: 0, total: 30 },
-          weeklyQuestions: weeklyQuestions || { done: 0, total: 500 },
-          weeklyReviews: weeklyReviews || { done: 0, total: 100 },
-          createdAt,
-          examDate: examDate || '',
-          examName: examName || ''
-        }), { merge: true });
-        setSaveStatus('saved');
+        await saveQueueRef.current.enqueue(`profiles/${user.uid}/${activeProfileId}`, () =>
+          setDoc(profileRef, sanitizeForFirestore({
+            id: activeProfileId,
+            name,
+            disciplines: disciplines || [],
+            mockTests: mockTests || [],
+            exerciseLogs: exerciseLogs || [],
+            activityLogs: activityLogs || [],
+            studyBlocks: studyBlocks || [],
+            weeklyHours: weeklyHours || { done: 0, total: 30 },
+            weeklyQuestions: weeklyQuestions || { done: 0, total: 500 },
+            weeklyReviews: weeklyReviews || { done: 0, total: 100 },
+            createdAt,
+            examDate: examDate || '',
+            examName: examName || ''
+          }), { merge: true })
+        );
       } catch (error) {
-        setSaveStatus('error');
+        failed = true;
         setSaveErrorMsg(error instanceof Error ? error.message : String(error));
         console.error("Erro salvando dados do plano:", error);
         handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/profiles/${activeProfileId}`);
+      } finally {
+        finishSave(failed);
       }
     };
 
-    const timeout = setTimeout(syncProfileData, 600);
-    return () => clearTimeout(timeout);
+    pendingDebouncesRef.current++;
+    setSaveStatus('saving');
+    let scheduled = true;
+    const timeout = setTimeout(() => {
+      scheduled = false;
+      pendingDebouncesRef.current = Math.max(0, pendingDebouncesRef.current - 1);
+      void syncProfileData();
+    }, 600);
+    return () => {
+      clearTimeout(timeout);
+      if (scheduled) {
+        pendingDebouncesRef.current = Math.max(0, pendingDebouncesRef.current - 1);
+      }
+    };
   }, [
     disciplines,
     mockTests,
@@ -388,27 +449,63 @@ export default function App() {
   };
 
   // 6. Switch study configurations active tab
-  const handleSwitchProfile = (id: string) => {
+  const handleSwitchProfile = async (id: string) => {
+    if (profileSwitchInProgressRef.current || id === activeProfileId) return;
     const target = profiles.find(p => p.id === id);
-    if (!target) return;
+    if (!target || !user || deletedProfileIdsRef.current.has(id)) return;
+    const previous = profiles.find(p => p.id === activeProfileId);
+    if (!previous && activeProfileId) {
+      setSaveStatus('error');
+      setSaveErrorMsg('O plano atual não foi encontrado. Recarregue os dados antes de trocar.');
+      return;
+    }
 
-    // Direct state hydration
+    profileSwitchInProgressRef.current = true;
+    if (previous) {
+      const snapshot = captureProfileSnapshot(previous, {
+        disciplines, mockTests, exerciseLogs, activityLogs, studyBlocks,
+        weeklyHours, weeklyQuestions, weeklyReviews, examDate, examName,
+      });
+
+      // Keep recent edits even if the debounce timer has not fired yet.
+      setProfiles(current => current.map(plan => plan.id === snapshot.id ? snapshot : plan));
+      beginSave();
+      let failed = false;
+      try {
+        await saveQueueRef.current.enqueue(`profiles/${user.uid}/${snapshot.id}`, () =>
+          setDoc(doc(db, 'users', user.uid, 'profiles', snapshot.id),
+            sanitizeForFirestore(snapshot), { merge: true })
+        );
+      } catch (cause) {
+        failed = true;
+        setSaveErrorMsg(cause instanceof Error ? cause.message : String(cause));
+        console.error('Troca de plano bloqueada: não foi possível persistir a origem.', cause);
+      } finally {
+        finishSave(failed);
+        if (failed) {
+          profileSwitchInProgressRef.current = false;
+          return;
+        }
+      }
+    }
+
+    // The source plan has finished saving. Hydrate the destination atomically
+    // as a React batch to avoid applying source state to the destination ID.
     setDisciplines(target.disciplines || []);
     setMockTests(target.mockTests || []);
     setExerciseLogs(target.exerciseLogs || []);
     setActivityLogs(target.activityLogs || []);
     setStudyBlocks(target.studyBlocks || []);
-    setWeeklyHours(target.weeklyHours || { done: 18, total: 30 });
-    setWeeklyQuestions(target.weeklyQuestions || { done: 320, total: 500 });
-    setWeeklyReviews(target.weeklyReviews || { done: 65, total: 100 });
+    setWeeklyHours(target.weeklyHours || { done: 0, total: 24 });
+    setWeeklyQuestions(target.weeklyQuestions || { done: 0, total: 300 });
+    setWeeklyReviews(target.weeklyReviews || { done: 0, total: 60 });
     setExamDate(target.examDate || '');
     setExamName(target.examName || '');
-    
-    // Switch state directly
     setActiveProfileId(id);
+    profileSwitchInProgressRef.current = false;
   };
 
-  const handleCreateProfile = (name: string, templateType: string, initialDisciplines?: Discipline[]) => {
+  const handleCreateProfile = async (name: string, templateType: string, initialDisciplines?: Discipline[]): Promise<boolean> => {
     let initialDisc: Discipline[] = initialDisciplines && initialDisciplines.length > 0 
       ? initialDisciplines 
       : [];
@@ -678,7 +775,7 @@ export default function App() {
     }
 
     const newProfile: CargoPlan = {
-      id: `profile_${Date.now()}`,
+      id: auth.currentUser ? doc(collection(db, 'users', auth.currentUser.uid, 'profiles')).id : `profile_${Date.now()}`,
       name,
       disciplines: initialDisc,
       mockTests: [],
@@ -693,94 +790,159 @@ export default function App() {
       examName: ''
     };
 
-    // Save previous active states in old active profile
-    setProfiles(prev => prev.map(p => {
-      if (p.id === activeProfileId) {
-        return {
-          ...p,
-          disciplines,
-          mockTests,
-          exerciseLogs,
-          activityLogs,
-          studyBlocks,
-          weeklyHours,
-          weeklyQuestions,
-          weeklyReviews,
-          examDate,
-          examName
-        };
+    // Save before switching: the legacy implementation hydrated the new
+    // profile immediately, cancelling the 600ms autosave of the old one.
+    const currentUser = auth.currentUser;
+    if (!isLoaded || !currentUser || profileSwitchInProgressRef.current) {
+      alert('Aguarde o carregamento e o salvamento do plano anterior.');
+      return false;
+    }
+    if (!name.trim() || name.length > 100 || profiles.some(p => p.id === newProfile.id)) {
+      alert('Nome ou identificador do novo plano inválido.');
+      return false;
+    }
+
+    const previous = profiles.find(p => p.id === activeProfileId);
+    if (activeProfileId && !previous) {
+      alert('O plano atual não foi encontrado. Atualize a página antes de criar outro.');
+      return false;
+    }
+    profileSwitchInProgressRef.current = true;
+    beginSave();
+    let failed = false;
+    try {
+      if (previous) {
+        const snapshot = captureProfileSnapshot(previous, {
+          disciplines, mockTests, exerciseLogs, activityLogs, studyBlocks,
+          weeklyHours, weeklyQuestions, weeklyReviews, examDate, examName,
+        });
+        await saveQueueRef.current.enqueue(`profiles/${currentUser.uid}/${snapshot.id}`, () =>
+          setDoc(doc(db, 'users', currentUser.uid, 'profiles', snapshot.id),
+            sanitizeForFirestore(snapshot), { merge: true })
+        );
       }
-      return p;
-    }));
 
-    // Add new profile and set it as active!
-    setProfiles(prev => [...prev, newProfile]);
+      await saveQueueRef.current.enqueue(`profiles/${currentUser.uid}/${newProfile.id}`, () =>
+        setDoc(doc(db, 'users', currentUser.uid, 'profiles', newProfile.id),
+          sanitizeForFirestore(newProfile))
+      );
 
-    // Hydrate local states
-    setDisciplines(newProfile.disciplines);
-    setMockTests(newProfile.mockTests);
-    setExerciseLogs(newProfile.exerciseLogs);
-    setActivityLogs(newProfile.activityLogs);
-    setStudyBlocks(newProfile.studyBlocks);
-    setWeeklyHours(newProfile.weeklyHours);
-    setWeeklyQuestions(newProfile.weeklyQuestions);
-    setWeeklyReviews(newProfile.weeklyReviews);
-    setExamDate('');
-    setExamName('');
-    setActiveProfileId(newProfile.id);
-
-    // Switch view to disciplines tab immediately and open the creation modal
-    setActiveTab('disciplinas');
-    setAutoOpenAddDiscipline(true);
+      if (auth.currentUser?.uid !== currentUser.uid) {
+        throw new Error('A sessão mudou durante a criação do plano.');
+      }
+      setProfiles(current => [
+        ...current.map(p => p.id === previous?.id
+          ? captureProfileSnapshot(p, {
+            disciplines, mockTests, exerciseLogs, activityLogs, studyBlocks,
+            weeklyHours, weeklyQuestions, weeklyReviews, examDate, examName,
+          }) : p),
+        newProfile,
+      ]);
+      setDisciplines(newProfile.disciplines);
+      setMockTests(newProfile.mockTests);
+      setExerciseLogs(newProfile.exerciseLogs);
+      setActivityLogs(newProfile.activityLogs);
+      setStudyBlocks(newProfile.studyBlocks);
+      setWeeklyHours(newProfile.weeklyHours);
+      setWeeklyQuestions(newProfile.weeklyQuestions);
+      setWeeklyReviews(newProfile.weeklyReviews);
+      setExamDate('');
+      setExamName('');
+      setActiveProfileId(newProfile.id);
+      setActiveTab('disciplinas');
+      setAutoOpenAddDiscipline(true);
+      return true;
+    } catch (cause) {
+      failed = true;
+      setSaveErrorMsg(cause instanceof Error ? cause.message : String(cause));
+      alert('Não foi possível criar o plano com segurança. Seu plano atual foi preservado.');
+      return false;
+    } finally {
+      finishSave(failed);
+      profileSwitchInProgressRef.current = false;
+    }
   };
 
   const handleDeleteProfile = async (id: string) => {
-    const filtered = profiles.filter(p => p.id !== id);
-    setProfiles(filtered);
-    
-    // If we deleted the active one, switch to the first remaining one
-    if (activeProfileId === id) {
-      if (filtered.length > 0) {
-        const first = filtered[0];
-        setDisciplines(first.disciplines);
-        setMockTests(first.mockTests);
-        setExerciseLogs(first.exerciseLogs);
-        setActivityLogs(first.activityLogs);
-        setStudyBlocks(first.studyBlocks);
-        setWeeklyHours(first.weeklyHours);
-        setWeeklyQuestions(first.weeklyQuestions);
-        setWeeklyReviews(first.weeklyReviews);
-        setExamDate(first.examDate || '');
-        setExamName(first.examName || '');
-        setActiveProfileId(first.id);
-      } else {
-        setDisciplines([]);
-        setMockTests([]);
-        setExerciseLogs([]);
-        setActivityLogs([]);
-        setStudyBlocks([]);
-        setWeeklyHours({ done: 0, total: 24 });
-        setWeeklyQuestions({ done: 0, total: 300 });
-        setWeeklyReviews({ done: 0, total: 60 });
-        setExamDate('');
-        setExamName('');
-        setActiveProfileId('');
+    const userId = auth.currentUser?.uid;
+    if (!userId || !profiles.some(p => p.id === id)) return;
+    if (deletedProfileIdsRef.current.has(id)) return;
+
+    try {
+      // Firestore does not cascade deletions to nested error notebooks.
+      const errorsRef = collection(db, 'users', userId, 'profiles', id, 'errors');
+      const existingErrors = await getDocs(query(errorsRef, limit(1)));
+      if (!existingErrors.empty) {
+        alert('Este plano possui erros individuais. Exporte e exclua os registros do caderno antes de remover o plano.');
+        return;
       }
+    } catch (cause) {
+      console.error('Erro conferindo o caderno do plano:', cause);
+      alert('Não foi possível verificar os erros do plano. Exclusão cancelada por segurança.');
+      return;
     }
 
-    if (user) {
-      try {
-        const pRef = doc(db, 'users', user.uid, 'profiles', id);
-        await deleteDoc(pRef);
-      } catch (err) {
-        console.error("Erro deletando perfil da nuvem:", err);
-        handleFirestoreError(err, OperationType.DELETE, `users/${user.uid}/profiles/${id}`);
-      }
+    deletedProfileIdsRef.current.add(id);
+    try {
+      // Wait for all pending writes BEFORE deleting. Future autosaves for
+      // this ID are blocked, so they cannot re-create the removed document.
+      await saveQueueRef.current.whenIdle(`profiles/${userId}/${id}`);
+      await deleteDoc(doc(db, 'users', userId, 'profiles', id));
+    } catch (cause) {
+      deletedProfileIdsRef.current.delete(id);
+      console.error('Erro ao remover o perfil da nuvem:', cause);
+      alert('Não foi possível excluir o plano do Firebase. Nenhum dado local foi removido.');
+      return;
+    }
+
+    const filtered = profiles.filter(p => p.id !== id);
+    setProfiles(current => current.filter(p => p.id !== id));
+
+    if (activeProfileId === id) {
+      const next = filtered[0];
+      setDisciplines(next?.disciplines || []);
+      setMockTests(next?.mockTests || []);
+      setExerciseLogs(next?.exerciseLogs || []);
+      setActivityLogs(next?.activityLogs || []);
+      setStudyBlocks(next?.studyBlocks || []);
+      setWeeklyHours(next?.weeklyHours || { done: 0, total: 24 });
+      setWeeklyQuestions(next?.weeklyQuestions || { done: 0, total: 300 });
+      setWeeklyReviews(next?.weeklyReviews || { done: 0, total: 60 });
+      setExamDate(next?.examDate || '');
+      setExamName(next?.examName || '');
+      setActiveProfileId(next?.id || '');
     }
   };
 
-  const handleUpdateProfileName = (id: string, newName: string) => {
-    setProfiles(prev => prev.map(p => p.id === id ? { ...p, name: newName } : p));
+  const handleUpdateProfileName = async (id: string, newName: string): Promise<boolean> => {
+    const currentUser = auth.currentUser;
+    if (!currentUser || !isLoaded || profileSwitchInProgressRef.current ||
+        !profiles.some(p => p.id === id) ||
+        !newName.trim() || newName.length > 100 ||
+        deletedProfileIdsRef.current.has(id)) return false;
+    profileSwitchInProgressRef.current = true;
+    beginSave();
+    let failed = false;
+    try {
+      const ref = doc(db, 'users', currentUser.uid, 'profiles', id);
+      // Serializes rename behind pending autosaves, even for inactive plans.
+      await saveQueueRef.current.enqueue(`profiles/${currentUser.uid}/${id}`, () =>
+        setDoc(ref, {name: newName.trim()}, {merge: true})
+      );
+      if (auth.currentUser?.uid !== currentUser.uid) {
+        throw new Error('A sessão mudou durante a edição.');
+      }
+      setProfiles(prev => prev.map(p => p.id === id ? {...p, name: newName.trim()} : p));
+      return true;
+    } catch (cause) {
+      failed = true;
+      setSaveErrorMsg(cause instanceof Error ? cause.message : String(cause));
+      alert('Não foi possível salvar o novo nome. O nome anterior foi preservado.');
+      return false;
+    } finally {
+      finishSave(failed);
+      profileSwitchInProgressRef.current = false;
+    }
   };
 
   const handleUpdateExamInfo = (name: string, date: string) => {
@@ -886,6 +1048,19 @@ export default function App() {
     setDisciplines(discs => discs.map(d => d.id === updated.id ? updated : d));
   };
 
+  const handleImportOutline = (outline: OutlineInput) => {
+    // Merge against CURRENT state, not a stale snapshot from the importer preview.
+    // Previously registered discipline/topic IDs, logs and progress are preserved.
+    setDisciplines(current => previewOutlineMerge(current, outline).disciplines);
+  };
+
+  const handleApplyPriorityEvidence = (evidence: PriorityEvidenceImport,
+    assignments: PriorityAssignment[]) => {
+    // Functional state update preserves unrelated discipline/topic metadata,
+    // sessions, logs and progress even when another change is pending.
+    setDisciplines(current => previewPriorityAssignments(current, evidence, assignments).disciplines);
+  };
+
   const handleDeleteDiscipline = (id: string) => {
     setDisciplines(disciplines.filter(d => d.id !== id));
   };
@@ -954,65 +1129,62 @@ export default function App() {
   };
 
   const handleAddExerciseLog = (newLog: Omit<ExerciseLog, 'id' | 'date'>, shouldCreateTopic?: boolean) => {
-    const today = new Date();
+    const nowMs = Date.now();
+    const today = new Date(nowMs);
     const months = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
     const formattedDate = `${today.getDate()} ${months[today.getMonth()]} ${today.getFullYear()}`;
-    
-    let finalTopicId = newLog.topicId;
-    const finalTopicName = newLog.topicName;
-    
-    setDisciplines(discs => discs.map(d => {
-      if (d.id === newLog.disciplineId) {
-        const updatedTopics = [...d.topics];
-        
-        if (shouldCreateTopic && !d.topics.some(t => t.name.toLowerCase() === finalTopicName.toLowerCase())) {
-          const newTopicId = `topic_${Date.now()}`;
-          updatedTopics.push({
-            id: newTopicId,
-            name: finalTopicName,
-            completed: false
-          });
-          finalTopicId = newTopicId;
-        }
-        
-        return {
-          ...d,
-          topics: updatedTopics,
-          topicsTotal: updatedTopics.length,
-          correctAnswers: d.correctAnswers + newLog.correctAnswers,
-          wrongAnswers: d.wrongAnswers + newLog.wrongAnswers
-        };
-      }
-      return d;
+
+    // Resolve the ID BEFORE updating React state. The old implementation
+    // mutated finalTopicId inside a state setter; that updater may run later,
+    // creating an exercise log with a stale topic reference.
+    const currentDiscipline = disciplines.find(d => d.id === newLog.disciplineId);
+    const existingTopic = shouldCreateTopic
+      ? currentDiscipline?.topics.find(t =>
+          t.name.trim().toLocaleLowerCase('pt-BR') === newLog.topicName.trim().toLocaleLowerCase('pt-BR'))
+      : undefined;
+    const finalTopicId = existingTopic?.id || newLog.topicId;
+
+    setDisciplines(current => current.map(d => {
+      if (d.id !== newLog.disciplineId) return d;
+      const hasTopic = d.topics.some(t => t.id === finalTopicId ||
+        (shouldCreateTopic && t.name.trim().toLocaleLowerCase('pt-BR') === newLog.topicName.trim().toLocaleLowerCase('pt-BR')));
+      const updatedTopics = shouldCreateTopic && !hasTopic
+        ? [...d.topics, { id: finalTopicId, name: newLog.topicName, completed: false }]
+        : d.topics;
+      return {
+        ...d,
+        topics: updatedTopics,
+        topicsTotal: updatedTopics.length,
+        correctAnswers: d.correctAnswers + newLog.correctAnswers,
+        wrongAnswers: d.wrongAnswers + newLog.wrongAnswers
+      };
     }));
 
     const created: ExerciseLog = {
       ...newLog,
-      id: `exlog_${Date.now()}`,
+      id: `exlog_${nowMs}_${Math.random().toString(36).slice(2, 8)}`,
       topicId: finalTopicId,
+      createdAtMs: nowMs,
       date: formattedDate
     };
-    
-    setExerciseLogs(prev => [created, ...prev]);
+    setExerciseLogs(current => [created, ...current]);
 
-    // Create ActivityLog for unified tracking
-    const nowMs = Date.now();
-    const logDate = getLocalDateString(new Date(nowMs));
     const newActivity: ActivityLog = {
-      id: `log_ex_${nowMs}`,
+      id: `log_ex_${nowMs}_${Math.random().toString(36).slice(2, 8)}`,
       disciplineName: newLog.disciplineName,
       timeSpentMin: 0,
       timestamp: 'Agora mesmo',
       details: `Resolveu ${newLog.questionsCount} questões (${newLog.correctAnswers} acertos / ${newLog.wrongAnswers} erros) - Tópico: ${newLog.topicName}`,
       colorClass: 'purple',
       createdAtMs: nowMs,
-      date: logDate,
+      date: getLocalDateString(today),
       questionsSolved: newLog.questionsCount,
+      topicId: finalTopicId,
       correctAnswers: newLog.correctAnswers,
       wrongAnswers: newLog.wrongAnswers,
       studyType: 'Questões'
     };
-    setActivityLogs(prev => [newActivity, ...prev]);
+    setActivityLogs(current => [newActivity, ...current]);
   };
 
   const handleDeleteExerciseLog = (logId: string) => {
@@ -1200,7 +1372,7 @@ export default function App() {
       wrongAnswers: 0,
       questionsSolved: 0
     };
-    setActivityLogs([newLog, ...activityLogs]);
+    setActivityLogs(current => [newLog, ...current]);
   };
 
   const handleLogStudySession = (session: {
@@ -1525,7 +1697,7 @@ export default function App() {
               </div>
             )}
 
-            <BackupButton />
+            <BackupButton canExport={isLoaded && saveStatus === 'saved'} />
 
             {/* Help Quick Reference button */}
             <button 
@@ -1668,6 +1840,8 @@ export default function App() {
               onAddDiscipline={handleAddDiscipline}
               onDeleteDiscipline={handleDeleteDiscipline}
               onUpdateDiscipline={handleUpdateDiscipline}
+              onImportOutline={handleImportOutline}
+              onPriorityEvidence={handleApplyPriorityEvidence}
               exerciseLogs={exerciseLogs}
               activityLogs={activityLogs}
               onAddExerciseLog={handleAddExerciseLog}
@@ -1675,6 +1849,16 @@ export default function App() {
               autoOpenAddModal={autoOpenAddDiscipline}
               onResetAutoOpen={() => setAutoOpenAddDiscipline(false)}
             />
+          )}
+
+          {activeTab === 'erros' && (
+            activeProfileId ? (
+              <ErrorNotebook profileId={activeProfileId} disciplines={disciplines} />
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">
+                Crie ou selecione um plano de estudos para utilizar o caderno de erros.
+              </div>
+            )
           )}
 
           {activeTab === 'planejamento' && (

@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import AllStudiedDaysModal from './AllStudiedDaysModal';
 import StudyIntelligence from './StudyIntelligence';
+import TJSPExamDistribution from './TJSPExamDistribution';
 import { Discipline, Reminder, ActivityLog, StreakDay, ExerciseLog } from '../types';
 import { MOTIVATIONAL_QUOTES } from '../data';
 import { formatMinutes, formatHours, getLocalDateString, getLogDateKey } from '../utils';
@@ -982,7 +983,21 @@ export default function DashboardHome({
         </button>
       </div>
       
-      <StudyIntelligence disciplines={disciplines} exerciseLogs={exerciseLogs} activityLogs={activityLogs} />
+      {/(tjsp|escrevente)/i.test(`${activeProfileName} ${examName}`) && <TJSPExamDistribution />}
+
+      <StudyIntelligence
+        disciplines={disciplines}
+        exerciseLogs={exerciseLogs}
+        activityLogs={activityLogs}
+        onStartTopic={(disciplineId, topicId) => {
+          const selected = disciplines.find(d => d.id === disciplineId);
+          if (!selected || !selected.topics.some(t => t.id === topicId)) return;
+          setStudyDisciplineId(disciplineId);
+          setStudyTopicId(topicId);
+          setStudyConcludeTopic(false);
+          setShowAddStudyModal(true);
+        }}
+      />
 
       {/* 1. Upper Dynamic Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

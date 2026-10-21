@@ -26,9 +26,16 @@ import {
   AlertTriangle,
   History,
   BarChart3,
-  Lightbulb
+  Lightbulb,
+  Download
 } from 'lucide-react';
-import { Discipline, Topic, ExerciseLog, ActivityLog } from '../types';
+import { Discipline, Topic, ExerciseLog, ActivityLog, ExamPriority, LearningPhase } from '../types';
+import { buildTopicDiagnostics, PHASE_LABELS } from '../studyStrategy';
+import OutlineImportPanel from './OutlineImportPanel';
+import PriorityEvidencePanel from './PriorityEvidencePanel';
+import type { PriorityAssignment, PriorityEvidenceImport } from '../priorityEvidence';
+import type { OutlineInput } from '../outlineImport';
+import { exportAnkiText } from '../ankiExport';
 import { formatMinutes } from '../utils';
 
 interface DisciplinasListProps {
@@ -36,6 +43,8 @@ interface DisciplinasListProps {
   onAddDiscipline: (d: Omit<Discipline, 'id'>) => void;
   onDeleteDiscipline: (id: string) => void;
   onUpdateDiscipline: (d: Discipline) => void;
+  onImportOutline: (outline: OutlineInput) => void;
+  onPriorityEvidence: (evidence: PriorityEvidenceImport, assignments: PriorityAssignment[]) => void;
   exerciseLogs: ExerciseLog[];
   activityLogs?: ActivityLog[];
   onAddExerciseLog: (log: Omit<ExerciseLog, 'id' | 'date'>, shouldCreateTopic?: boolean) => void;
@@ -58,6 +67,8 @@ export default function DisciplinasList({
   onAddDiscipline, 
   onDeleteDiscipline, 
   onUpdateDiscipline,
+  onImportOutline,
+  onPriorityEvidence,
   exerciseLogs,
   activityLogs = [],
   onAddExerciseLog,
@@ -67,6 +78,7 @@ export default function DisciplinasList({
 }: DisciplinasListProps) {
   const [filter, setFilter] = useState('Todas');
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showImportPanel, setShowImportPanel] = useState(false);
 
   React.useEffect(() => {
     if (autoOpenAddModal) {
@@ -88,6 +100,12 @@ export default function DisciplinasList({
   const [exFormWrongAnswers, setExFormWrongAnswers] = useState(2);
   const [exFormNotes, setExFormNotes] = useState('');
   const [exFormDifficulty, setExFormDifficulty] = useState<'Baixa' | 'Média' | 'Alta'>('Média');
+  const [exFormIsNewQuestions, setExFormIsNewQuestions] = useState(true);
+  const [exFormBoard, setExFormBoard] = useState('Vunesp');
+  const [exFormCause, setExFormCause] = useState('');
+  const [exFormAnkiFront, setExFormAnkiFront] = useState('');
+  const [exFormAnkiBack, setExFormAnkiBack] = useState('');
+  const [ankiMessage, setAnkiMessage] = useState('');
 
   // Exercise log analytics card states
   const [activeAnalysisTab, setActiveAnalysisTab] = useState<'logs' | 'difficulties' | 'mostPracticed' | 'evolution'>('logs');
@@ -114,6 +132,37 @@ export default function DisciplinasList({
 
   // Synchronized active discipline
   const activeDiscipline = disciplines.find((d) => d.id === selectedDiscipline?.id) || null;
+  const topicDiagnostics = React.useMemo(
+    () => new Map(buildTopicDiagnostics(disciplines, exerciseLogs).map(item => [item.key, item])),
+    [disciplines, exerciseLogs]
+  );
+
+  // Metadados opcionais: atualizar apenas o tópico correspondente mantém logs e IDs.
+  const handleSetTopicPriority = (topicId: string, value: string) => {
+    if (!activeDiscipline) return;
+    const updatedTopics = activeDiscipline.topics.map(topic => {
+      if (topic.id !== topicId) return topic;
+      if (value === 'A' || value === 'B' || value === 'C') {
+        return { ...topic, examPriority: value as ExamPriority, examPrioritySource: 'Classificação manual' };
+      }
+      const { examPriority: _priority, examPrioritySource: _source, ...rest } = topic;
+      return rest;
+    });
+    onUpdateDiscipline({ ...activeDiscipline, topics: updatedTopics });
+  };
+
+  const handleSetTopicPhase = (topicId: string, value: string) => {
+    if (!activeDiscipline) return;
+    const updatedTopics = activeDiscipline.topics.map(topic => {
+      if (topic.id !== topicId) return topic;
+      if (value === 'base' || value === 'consolidacao' || value === 'dominio') {
+        return { ...topic, learningPhase: value as LearningPhase };
+      }
+      const { learningPhase: _phase, ...rest } = topic;
+      return rest;
+    });
+    onUpdateDiscipline({ ...activeDiscipline, topics: updatedTopics });
+  };
 
   const handleAddTempTopic = () => {
     if (topicInput.trim()) {
@@ -280,6 +329,11 @@ export default function DisciplinasList({
     setExFormWrongAnswers(2);
     setExFormNotes('');
     setExFormDifficulty('Média');
+    setExFormIsNewQuestions(true);
+    setExFormBoard('Vunesp');
+    setExFormCause('');
+    setExFormAnkiFront('');
+    setExFormAnkiBack('');
     setShowExerciseFormModal(true);
   };
 
@@ -330,6 +384,14 @@ export default function DisciplinasList({
       }
     }
 
+    if (Boolean(exFormAnkiFront.trim()) !== Boolean(exFormAnkiBack.trim())) {
+      alert('Preencha a frente e o verso do flashcard, ou deixe ambos em branco.');
+      return;
+    }
+    if (Number(exFormWrongAnswers) === 0 && (exFormAnkiFront.trim() || exFormAnkiBack.trim())) {
+      alert('O flashcard do caderno de erros deve estar associado a pelo menos um erro.');
+      return;
+    }
     const totalQuestions = Number(exFormCorrectAnswers) + Number(exFormWrongAnswers);
     const accuracy = totalQuestions > 0 ? Math.round((Number(exFormCorrectAnswers) / totalQuestions) * 100) : 0;
 
@@ -343,10 +405,36 @@ export default function DisciplinasList({
       correctAnswers: Number(exFormCorrectAnswers),
       wrongAnswers: Number(exFormWrongAnswers),
       notes: exFormNotes.trim(),
-      difficulty: exFormDifficulty
+      difficulty: exFormDifficulty,
+      isNewQuestions: exFormIsNewQuestions,
+      examBoard: exFormBoard.trim() || undefined,
+      errorCause: (exFormCause || undefined) as ExerciseLog['errorCause'],
+      ankiFront: exFormAnkiFront.trim(),
+      ankiBack: exFormAnkiBack.trim()
     }, exFormIsNewTopic);
 
     setShowExerciseFormModal(false);
+  };
+
+  const handleExportAnki = () => {
+    const deck = exportAnkiText(exerciseLogs);
+    if (!deck.count) {
+      setAnkiMessage('Nenhum flashcard completo foi cadastrado neste perfil.');
+      return;
+    }
+    const blob = new Blob(['\uFEFF', deck.text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    try {
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'estudei-anki-' + new Date().toISOString().slice(0, 10) + '.txt';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setAnkiMessage(deck.count + ' flashcards preparados. No Anki, importe o arquivo de texto.');
+    } finally {
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
   };
 
   const topicStats = React.useMemo(() => {
@@ -479,6 +567,23 @@ export default function DisciplinasList({
             <option value="Não Iniciadas">Não Iniciadas</option>
           </select>
           
+          <button
+            type="button"
+            onClick={handleExportAnki}
+            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+            title="Exportar flashcards dos erros registrados nas questões deste perfil"
+          >
+            <Download size={14} />
+            Exportar Anki
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowImportPanel(open => !open)}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+          >
+            {showImportPanel ? 'Fechar importações' : 'Edital e prioridades'}
+          </button>
+
           <button 
             type="button"
             onClick={() => setShowAddModal(true)}
@@ -489,6 +594,14 @@ export default function DisciplinasList({
           </button>
         </div>
       </div>
+
+      {showImportPanel && (
+        <div className="space-y-3">
+          <OutlineImportPanel disciplines={disciplines} onApply={onImportOutline} />
+          <PriorityEvidencePanel disciplines={disciplines} onApply={onPriorityEvidence} />
+        </div>
+      )}
+      {ankiMessage && <p role="status" className="text-xs text-slate-600 dark:text-slate-300">{ankiMessage}</p>}
 
       {/* Bento Grid layout */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1059,6 +1172,68 @@ export default function DisciplinasList({
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <label className="text-[10px] font-bold uppercase tracking-wide text-slate-500 dark:text-slate-300">
+                  Banca
+                  <input
+                    type="text"
+                    maxLength={60}
+                    value={exFormBoard}
+                    onChange={event => setExFormBoard(event.target.value)}
+                    placeholder="Vunesp"
+                    className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-xs font-semibold text-slate-800 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                  />
+                </label>
+                <label className="flex items-center gap-2 self-end rounded-lg bg-slate-50 p-3 text-xs font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-100">
+                  <input type="checkbox" checked={exFormIsNewQuestions}
+                    onChange={event => setExFormIsNewQuestions(event.target.checked)} />
+                  Questões inéditas para mim
+                </label>
+              </div>
+              <p className="text-[10px] text-slate-500 dark:text-slate-400">
+                Marque inéditas apenas se ainda não resolveu essas questões. Essa informação melhora o diagnóstico de domínio.
+              </p>
+
+              {Number(exFormWrongAnswers) > 0 && (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 dark:border-slate-700 dark:bg-slate-800/60">
+                  <h4 className="text-xs font-extrabold text-slate-800 dark:text-white">Caderno de erros · Anki (opcional)</h4>
+                  <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
+                    Registre um conceito que causou erro neste bloco. Crie uma pergunta curta, não copie a questão inteira.
+                  </p>
+                  <label className="mt-2 block text-[10px] font-bold uppercase text-slate-500">
+                    Causa do erro
+                    <select
+                      value={exFormCause}
+                      onChange={event => setExFormCause(event.target.value)}
+                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    >
+                      <option value="">Não classificada</option>
+                      <option value="desconhecimento">Desconhecimento da regra</option>
+                      <option value="confusao">Confusão entre conceitos</option>
+                      <option value="interpretacao">Interpretação do enunciado</option>
+                      <option value="desatencao">Desatenção</option>
+                      <option value="tempo">Tempo insuficiente</option>
+                    </select>
+                  </label>
+                  <label className="mt-2 block text-[10px] font-bold uppercase text-slate-500">
+                    Frente (pergunta)
+                    <input type="text" maxLength={240} value={exFormAnkiFront}
+                      onChange={event => setExFormAnkiFront(event.target.value)}
+                      placeholder="Ex.: Como se contam os prazos processuais fixados em dias?"
+                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                  </label>
+                  <label className="mt-2 block text-[10px] font-bold uppercase text-slate-500">
+                    Verso (regra correta)
+                    <textarea rows={2} maxLength={300} value={exFormAnkiBack}
+                      onChange={event => setExFormAnkiBack(event.target.value)}
+                      placeholder="Ex.: Em regra, contam-se somente os dias úteis (art. 219, CPC)."
+                      className="mt-1 w-full rounded-lg border border-slate-200 bg-white p-2 text-xs text-slate-800 dark:border-slate-700 dark:bg-slate-900 dark:text-white"
+                    />
+                  </label>
+                </div>
+              )}
+
               {/* Observações / Dificuldades */}
               <div>
                 <label className="block text-[10px] font-black text-slate-400 mb-1 uppercase tracking-wider">Anotações Relevantes / Dificuldades</label>
@@ -1326,13 +1501,14 @@ export default function DisciplinasList({
                 {activeDiscipline.topics && activeDiscipline.topics.length > 0 ? (
                   <div className="bg-slate-50 border border-slate-100 p-2 rounded-xl max-h-[285px] overflow-y-auto space-y-1.5">
                     {activeDiscipline.topics.map((topic) => {
-                      const topicExerciseLogs = exerciseLogs.filter(log => log.topicId === topic.id);
+                      const diagnostic = topicDiagnostics.get(`${activeDiscipline.id}::${topic.id}`);
+                      const topicExerciseLogs = exerciseLogs.filter(log => log.disciplineId === activeDiscipline.id && log.topicId === topic.id);
                       const totalTopicCorrect = topicExerciseLogs.reduce((acc, curr) => acc + curr.correctAnswers, 0);
                       const totalTopicWrong = topicExerciseLogs.reduce((acc, curr) => acc + curr.wrongAnswers, 0);
                       const totalTopicQuestions = totalTopicCorrect + totalTopicWrong;
                       const topicAccuracy = totalTopicQuestions > 0 ? Math.round((totalTopicCorrect / totalTopicQuestions) * 100) : 0;
 
-                      const topicActivityLogs = activityLogs.filter(log => log.topicId === topic.id);
+                      const topicActivityLogs = activityLogs.filter(log => log.topicId === topic.id && log.disciplineName === activeDiscipline.name);
                       const totalTopicMins = topicActivityLogs.reduce((acc, curr) => acc + curr.timeSpentMin, 0);
                       const studyHoursStr = formatMinutes(totalTopicMins);
 
@@ -1369,6 +1545,44 @@ export default function DisciplinasList({
                                 ) : (
                                   <span className={`text-xs font-semibold truncate ${topic.completed ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>
                                     {topic.name}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* A/B/C do edital é independente da urgência pessoal. */}
+                              <div className="flex flex-wrap gap-2 mt-2 pl-6">
+                                <label className="flex items-center gap-1 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                                  Edital
+                                  <select
+                                    aria-label={`Prioridade no edital: ${topic.name}`}
+                                    title="Classificação manual conforme análise de incidência da Vunesp"
+                                    value={topic.examPriority || ''}
+                                    onChange={event => handleSetTopicPriority(topic.id, event.target.value)}
+                                    className="rounded border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                  >
+                                    <option value="">Não classificado</option>
+                                    <option value="A">A · Alta incidência</option>
+                                    <option value="B">B · Média incidência</option>
+                                    <option value="C">C · Baixa incidência</option>
+                                  </select>
+                                </label>
+                                <label className="flex items-center gap-1 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                                  Fase
+                                  <select
+                                    aria-label={`Fase de aprendizagem: ${topic.name}`}
+                                    value={topic.learningPhase || ''}
+                                    onChange={event => handleSetTopicPhase(topic.id, event.target.value)}
+                                    className="rounded border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                  >
+                                    <option value="">Automática</option>
+                                    <option value="base">Base teórica</option>
+                                    <option value="consolidacao">Consolidação</option>
+                                    <option value="dominio">Domínio</option>
+                                  </select>
+                                </label>
+                                {diagnostic && (
+                                  <span className="self-center text-[10px] text-slate-500 dark:text-slate-400" title="Urgência calculada com base no desempenho e na prioridade do edital">
+                                    Urgência {diagnostic.urgency} · {PHASE_LABELS[diagnostic.phase]}
                                   </span>
                                 )}
                               </div>

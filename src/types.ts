@@ -3,6 +3,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * A/B/C do edital: importância histórica de cobrança, atribuída por análise
+ * externa fundamentada. NÃO é uma medida de dificuldade individual.
+ */
+export type ExamPriority = 'A' | 'B' | 'C';
+
+/** Estado pedagógico do tópico, independente da prioridade do edital. */
+export type LearningPhase = 'base' | 'consolidacao' | 'dominio';
+
 export interface Subtopic {
   id: string;
   name: string;
@@ -14,6 +23,12 @@ export interface Topic {
   name: string;
   completed: boolean;
   subtopics?: Subtopic[];
+  /** Classificação do edital; ausência = ainda não classificado. */
+  examPriority?: ExamPriority;
+  /** Ajuste manual opcional da fase, quando necessário. */
+  learningPhase?: LearningPhase;
+  /** Fonte/versão usada para classificar o edital. */
+  examPrioritySource?: string;
 }
 
 export interface Discipline {
@@ -94,6 +109,17 @@ export interface ExerciseLog {
   notes: string;
   difficulty: 'Baixa' | 'Média' | 'Alta';
   date: string; // formatted e.g., "27 Out 2023"
+  /** Data registrada em UTC (quando disponível). Registros antigos podem não ter. */
+  createdAtMs?: number;
+  /** O bloco continha somente questões ainda não respondidas anteriormente? */
+  isNewQuestions?: boolean;
+  /** Identificador da banca, opcional para compatibilidade com registros antigos. */
+  examBoard?: string;
+  /** Maior dificuldade identificada no bloco, se registrada. */
+  errorCause?: 'desconhecimento' | 'confusao' | 'interpretacao' | 'desatencao' | 'tempo';
+  /** Um conceito a revisar por bloco; estrutura detalhada virá na migração de erros. */
+  ankiFront?: string;
+  ankiBack?: string;
 }
 
 export interface CargoPlan {
