@@ -23,5 +23,7 @@ jobs:
         run: npm ci
       - name: Verificar TypeScript
         run: npm run lint
+      - name: Testar validação dos backups
+        run: npm test
       - name: Compilar aplicação
         run: npm run build
