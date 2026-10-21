@@ -3,6 +3,7 @@ import { Download, FileCheck2, Loader2, ShieldCheck, AlertTriangle } from 'lucid
 import { auth, db } from '../firebase';
 import { collection, doc, getDoc, getDocs } from 'firebase/firestore';
 import { createBackup, inspectBackup, MAX_BACKUP_FILE_BYTES, BackupInspection } from '../backup';
+import { prepareRecovery } from '../backupRecovery';
 
 /**
  * Backup e inspeção locais. Nenhuma operação de importação/restauração é
@@ -13,6 +14,11 @@ export default function BackupButton() {
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState('');
   const [inspection, setInspection] = useState<BackupInspection | null>(null);
+  const [recoveryPreviews, setRecoveryPreviews] = useState<Array<{
+    name: string;
+    eligible: boolean;
+    description: string;
+  }>>([]);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const exportBackup = async () => {
@@ -78,13 +84,41 @@ export default function BackupButton() {
     setChecking(true);
     setError('');
     setInspection(null);
+    setRecoveryPreviews([]);
 
     try {
       if (file.size > MAX_BACKUP_FILE_BYTES) {
         throw new Error('O arquivo é muito grande para a verificação local (limite de 30 MB).');
       }
       const parsed: unknown = JSON.parse(await file.text());
-      setInspection(await inspectBackup(parsed));
+      const inspectionResult = await inspectBackup(parsed);
+      setInspection(inspectionResult);
+      if (inspectionResult.valid && inspectionResult.version === 3 &&
+          inspectionResult.integrity === 'verified' &&
+          typeof parsed === 'object' && parsed !== null && 'profiles' in parsed &&
+          Array.isArray(parsed.profiles)) {
+        const previewResults = await Promise.all(parsed.profiles.map(async (item, index) => {
+          const name = item?.data?.name && typeof item.data.name === 'string'
+            ? item.data.name : 'Plano ' + (index + 1);
+          try {
+            const prepared = await prepareRecovery(parsed, item.documentId, 'restore_preview_' + index);
+            return {
+              name,
+              eligible: true,
+              description: prepared.history.exerciseLogs + ' blocos de questões, ' +
+                prepared.history.activityLogs + ' atividades e ' +
+                prepared.history.errorNotes + ' erros individuais recuperáveis.',
+            };
+          } catch (cause) {
+            return {
+              name,
+              eligible: false,
+              description: cause instanceof Error ? cause.message : 'Dados não preparados para restauração.',
+            };
+          }
+        }));
+        setRecoveryPreviews(previewResults);
+      }
     } catch (cause) {
       setError(cause instanceof SyntaxError
         ? 'O arquivo selecionado não é um JSON válido.'
@@ -154,6 +188,19 @@ export default function BackupButton() {
           )}
           {inspection.errors.map((issue, i) => <p key={`error-${i}`} className="mt-1">Erro: {issue}</p>)}
           {inspection.warnings.map((notice, i) => <p key={`warn-${i}`} className="mt-1">Aviso: {notice}</p>)}
+          {recoveryPreviews.length > 0 && (
+            <div className="mt-2 border-t border-current/10 pt-2">
+              <p className="font-bold">Prévia de recuperação para novos planos</p>
+              {recoveryPreviews.map((item,index) => (
+                <p key={index} className="mt-1">
+                  {item.eligible ? '✓' : '⚠'} {item.name}: {item.description}
+                </p>
+              ))}
+              <p className="mt-1 font-semibold">
+                Esta prévia não grava nem restaura dados. A restauração será ativada somente após testes finais.
+              </p>
+            </div>
+          )}
           <p className="mt-1 opacity-80">Somente leitura local. Seus dados na nuvem não foram alterados.</p>
         </div>
       )}
