@@ -28,7 +28,8 @@ import {
   BarChart3,
   Lightbulb
 } from 'lucide-react';
-import { Discipline, Topic, ExerciseLog, ActivityLog } from '../types';
+import { Discipline, Topic, ExerciseLog, ActivityLog, ExamPriority, LearningPhase } from '../types';
+import { buildTopicDiagnostics, PHASE_LABELS } from '../studyStrategy';
 import { formatMinutes } from '../utils';
 
 interface DisciplinasListProps {
@@ -114,6 +115,37 @@ export default function DisciplinasList({
 
   // Synchronized active discipline
   const activeDiscipline = disciplines.find((d) => d.id === selectedDiscipline?.id) || null;
+  const topicDiagnostics = React.useMemo(
+    () => new Map(buildTopicDiagnostics(disciplines, exerciseLogs).map(item => [item.key, item])),
+    [disciplines, exerciseLogs]
+  );
+
+  // Metadados opcionais: atualizar apenas o tópico correspondente mantém logs e IDs.
+  const handleSetTopicPriority = (topicId: string, value: string) => {
+    if (!activeDiscipline) return;
+    const updatedTopics = activeDiscipline.topics.map(topic => {
+      if (topic.id !== topicId) return topic;
+      if (value === 'A' || value === 'B' || value === 'C') {
+        return { ...topic, examPriority: value as ExamPriority, examPrioritySource: 'Classificação manual' };
+      }
+      const { examPriority: _priority, examPrioritySource: _source, ...rest } = topic;
+      return rest;
+    });
+    onUpdateDiscipline({ ...activeDiscipline, topics: updatedTopics });
+  };
+
+  const handleSetTopicPhase = (topicId: string, value: string) => {
+    if (!activeDiscipline) return;
+    const updatedTopics = activeDiscipline.topics.map(topic => {
+      if (topic.id !== topicId) return topic;
+      if (value === 'base' || value === 'consolidacao' || value === 'dominio') {
+        return { ...topic, learningPhase: value as LearningPhase };
+      }
+      const { learningPhase: _phase, ...rest } = topic;
+      return rest;
+    });
+    onUpdateDiscipline({ ...activeDiscipline, topics: updatedTopics });
+  };
 
   const handleAddTempTopic = () => {
     if (topicInput.trim()) {
@@ -1326,7 +1358,8 @@ export default function DisciplinasList({
                 {activeDiscipline.topics && activeDiscipline.topics.length > 0 ? (
                   <div className="bg-slate-50 border border-slate-100 p-2 rounded-xl max-h-[285px] overflow-y-auto space-y-1.5">
                     {activeDiscipline.topics.map((topic) => {
-                      const topicExerciseLogs = exerciseLogs.filter(log => log.topicId === topic.id);
+                      const diagnostic = topicDiagnostics.get(`${activeDiscipline.id}::${topic.id}`);
+                      const topicExerciseLogs = exerciseLogs.filter(log => log.disciplineId === activeDiscipline.id && log.topicId === topic.id);
                       const totalTopicCorrect = topicExerciseLogs.reduce((acc, curr) => acc + curr.correctAnswers, 0);
                       const totalTopicWrong = topicExerciseLogs.reduce((acc, curr) => acc + curr.wrongAnswers, 0);
                       const totalTopicQuestions = totalTopicCorrect + totalTopicWrong;
@@ -1369,6 +1402,44 @@ export default function DisciplinasList({
                                 ) : (
                                   <span className={`text-xs font-semibold truncate ${topic.completed ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>
                                     {topic.name}
+                                  </span>
+                                )}
+                              </div>
+
+                              {/* A/B/C do edital é independente da urgência pessoal. */}
+                              <div className="flex flex-wrap gap-2 mt-2 pl-6">
+                                <label className="flex items-center gap-1 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                                  Edital
+                                  <select
+                                    aria-label={`Prioridade no edital: ${topic.name}`}
+                                    title="Classificação manual conforme análise de incidência da Vunesp"
+                                    value={topic.examPriority || ''}
+                                    onChange={event => handleSetTopicPriority(topic.id, event.target.value)}
+                                    className="rounded border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                  >
+                                    <option value="">Não classificado</option>
+                                    <option value="A">A · Alta incidência</option>
+                                    <option value="B">B · Média incidência</option>
+                                    <option value="C">C · Baixa incidência</option>
+                                  </select>
+                                </label>
+                                <label className="flex items-center gap-1 text-[10px] font-semibold text-slate-600 dark:text-slate-300">
+                                  Fase
+                                  <select
+                                    aria-label={`Fase de aprendizagem: ${topic.name}`}
+                                    value={topic.learningPhase || ''}
+                                    onChange={event => handleSetTopicPhase(topic.id, event.target.value)}
+                                    className="rounded border border-slate-200 bg-white px-1.5 py-1 text-[10px] text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
+                                  >
+                                    <option value="">Automática</option>
+                                    <option value="base">Base teórica</option>
+                                    <option value="consolidacao">Consolidação</option>
+                                    <option value="dominio">Domínio</option>
+                                  </select>
+                                </label>
+                                {diagnostic && (
+                                  <span className="self-center text-[10px] text-slate-500 dark:text-slate-400" title="Urgência calculada com base no desempenho e na prioridade do edital">
+                                    Urgência {diagnostic.urgency} · {PHASE_LABELS[diagnostic.phase]}
                                   </span>
                                 )}
                               </div>
