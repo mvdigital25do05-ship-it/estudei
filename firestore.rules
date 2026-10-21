@@ -54,6 +54,39 @@ service cloud.firestore {
         && (!('examName' in data) || data.examName is string && data.examName.size() <= 200);
     }
 
+
+    // Error notes live in separate subcollections; validates each entry to
+    // avoid growing the existing profile document or weakening owner isolation.
+    function isValidErrorNote(data) {
+      return data.keys().hasAll([
+        'id', 'profileId', 'disciplineId', 'disciplineName',
+        'topicId', 'topicName', 'questionRef', 'cause',
+        'summary', 'rule', 'front', 'back', 'status',
+        'createdAtMs', 'updatedAtMs'
+      ])
+      && data.keys().hasOnly([
+        'id', 'profileId', 'disciplineId', 'disciplineName',
+        'topicId', 'topicName', 'questionRef', 'cause',
+        'summary', 'rule', 'front', 'back', 'status',
+        'createdAtMs', 'updatedAtMs'
+      ])
+      && data.id is string && isValidId(data.id)
+      && data.profileId is string && isValidId(data.profileId)
+      && data.disciplineId is string && data.disciplineId.size() > 0 && data.disciplineId.size() <= 128
+      && data.disciplineName is string && data.disciplineName.size() > 0 && data.disciplineName.size() <= 160
+      && data.topicId is string && data.topicId.size() > 0 && data.topicId.size() <= 128
+      && data.topicName is string && data.topicName.size() > 0 && data.topicName.size() <= 160
+      && data.questionRef is string && data.questionRef.size() <= 240
+      && data.cause in ['desconhecimento', 'confusao', 'interpretacao', 'desatencao', 'tempo', 'outro']
+      && data.summary is string && data.summary.size() > 0 && data.summary.size() <= 1000
+      && data.rule is string && data.rule.size() > 0 && data.rule.size() <= 2000
+      && data.front is string && data.front.size() <= 500
+      && data.back is string && data.back.size() <= 1000
+      && data.status in ['aberto', 'revisado', 'arquivado']
+      && data.createdAtMs is int && data.createdAtMs > 0
+      && data.updatedAtMs is int && data.updatedAtMs >= data.createdAtMs;
+    }
+
     // Match blocks for Collections
     match /users/{userId} {
       allow get: if isOwner(userId);
@@ -97,6 +130,19 @@ service cloud.firestore {
         
         allow delete: if isOwner(userId) 
           && isValidId(profileId);
+
+        match /errors/{errorId} {
+          allow get, list: if isOwner(userId) && isValidId(profileId) && isValidId(errorId);
+          allow create: if isOwner(userId) && isValidId(profileId) && isValidId(errorId)
+            && exists(/databases/$(database)/documents/users/$(userId)/profiles/$(profileId))
+            && isValidErrorNote(incoming())
+            && incoming().id == errorId && incoming().profileId == profileId;
+          allow update: if isOwner(userId) && isValidId(profileId) && isValidId(errorId)
+            && isValidErrorNote(incoming()) && incoming().id == existing().id
+            && incoming().profileId == existing().profileId
+            && incoming().createdAtMs == existing().createdAtMs;
+          allow delete: if isOwner(userId) && isValidId(profileId) && isValidId(errorId);
+        }
       }
     }
   }
