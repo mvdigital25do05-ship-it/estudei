@@ -39,7 +39,7 @@ import PlanejamentoSchedule from './components/PlanejamentoSchedule';
 import SimuladosQuestoes from './components/SimuladosQuestoes';
 
 // Firebase imports
-import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, getDocs, setDoc, deleteDoc, collection, limit, query } from 'firebase/firestore';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import AuthScreen from './components/AuthScreen';
 import BackupButton from './components/BackupButton';
@@ -737,6 +737,23 @@ export default function App() {
   };
 
   const handleDeleteProfile = async (id: string) => {
+    // Deleting a Firestore profile does NOT cascade to its subcollections.
+    // Refuse deletion while its dedicated error notebook contains records.
+    // Check BEFORE mutating local React state.
+    if (user) {
+      try {
+        const errorsRef = collection(db, 'users', user.uid, 'profiles', id, 'errors');
+        const existingErrors = await getDocs(query(errorsRef, limit(1)));
+        if (!existingErrors.empty) {
+          alert('Este plano possui erros individuais no caderno. Exporte e exclua esses registros antes de apagar o plano.');
+          return;
+        }
+      } catch (cause) {
+        console.error('Não foi possível conferir o caderno de erros do perfil:', cause);
+        alert('Não foi possível verificar os erros vinculados ao plano. Exclusão interrompida por segurança.');
+        return;
+      }
+    }
     const filtered = profiles.filter(p => p.id !== id);
     setProfiles(filtered);
     
