@@ -18,6 +18,7 @@ import {
 import { CargoPlan, Discipline, Topic } from '../types';
 import { formatMinutes, formatTopicName } from '../utils';
 import { getStudyTopics } from '../studyOrder';
+import { getMainTopicProgress } from '../topicGroups';
 
 interface PlanosManagerProps {
   profiles: CargoPlan[];
@@ -125,8 +126,9 @@ export default function PlanosManager({
       totalSpentMin += d.timeSpentMin;
       totalCorrect += d.correctAnswers;
       totalWrong += d.wrongAnswers;
-      totalTopics += d.topicsTotal || d.topics.length;
-      completedTopics += d.topicsDone || d.topics.filter(t => t.completed).length;
+      const progress = getMainTopicProgress(d);
+      totalTopics += progress.total;
+      completedTopics += progress.completed;
     });
 
     const totalQuestions = totalCorrect + totalWrong;

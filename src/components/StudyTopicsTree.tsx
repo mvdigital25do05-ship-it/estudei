@@ -28,18 +28,20 @@ export default function StudyTopicsTree({ discipline, activities, exercises, onS
     const topics = getNodeTopics(node);
     const stats = getNodeStats(node, activities, exercises, discipline.id, discipline.name);
     const allDone = stats.total > 0 && stats.completed === stats.total;
-    const checkbox = <input type="checkbox" checked={allDone} aria-label={`Concluir ${formatTopicName(node.name)}`}
+    const checkbox = <input type="checkbox" checked={allDone} aria-label={`Concluir ${node.topic ? 'subtópico' : 'tópico'} ${formatTopicName(node.name)}`}
       ref={input => { if (input) input.indeterminate = stats.completed > 0 && !allDone; }}
       onClick={event => event.stopPropagation()}
       onChange={event => onSetCompletion(topics.map(t => t.id), event.target.checked)}
       className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300 text-emerald-600" />;
     const metrics = <span className="mt-1 block text-[10px] font-medium text-slate-500">
       {formatMinutes(stats.minutes)}{stats.correct + stats.wrong > 0 ? ` · ${stats.correct + stats.wrong} questões · ${Math.round(100 * stats.correct / (stats.correct + stats.wrong))}% acertos` : ''}
-      {!node.topic ? ` · ${stats.completed}/${stats.total} assuntos concluídos` : ''}
+      {!node.topic ? ` · ${allDone ? 'Tópico concluído' : 'Tópico pendente'}` : ''}
     </span>;
     if (!node.topic) return <details key={node.id} open={depth === 0} className="rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900">
       <summary className="cursor-pointer text-xs font-bold text-slate-800 dark:text-slate-100">
-        <span className="inline-flex max-w-full items-start gap-2 align-middle">{checkbox}<span>{position}- {node.name}{metrics}</span></span>
+        <span className="inline-flex max-w-full items-start gap-2 align-middle">{checkbox}<span>{position}- {node.name}
+          {node.reference && <span className="mt-1 block text-[10px] font-normal text-slate-500">{node.reference}</span>}
+          {metrics}</span></span>
       </summary>
       <div className="mt-3 space-y-2 border-l border-slate-200 pl-3 dark:border-slate-700">
         {(node.children || []).map((child, index) => render(child, `${position}.${index + 1}`, depth + 1))}

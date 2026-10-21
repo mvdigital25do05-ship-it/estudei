@@ -29,6 +29,7 @@ export interface StudyContentNode {
   children?: StudyContentNode[];
   topic?: Topic;
   groupId?: string;
+  reference?: string;
 }
 
 export function hasTopicGroups(discipline?: Discipline | null): boolean {
@@ -42,14 +43,13 @@ export function getTopicGroups(discipline: Discipline): StudyContentNode[] {
   const prefix = discipline.id.slice(5);
   const ranks = new Map(sorted.map((topic, index) => [topic.id, index]));
   const used = new Set<string>();
-  const groups = definitions[prefix].map(def => {
+  const groups: (StudyContentNode & { rank: number })[] = definitions[prefix].map(def => {
     const groupId = `tjsp_group_${prefix}_${def.key}`;
     const ids = new Set(def.numbers.map(n => `tjsp_${prefix}_${String(n).padStart(3, '0')}`));
     const topics = sorted.filter(t => ids.has(t.id) || t.studyGroupId === groupId);
     topics.forEach(t => used.add(t.id));
     const leaves: StudyContentNode[] = topics.map(topic => ({ id: topic.id, name: topic.name, topic }));
-    const children = def.law ? [{ id: `${groupId}_law`, name: def.law, children: leaves }] : leaves;
-    return { id: groupId, name: def.name, groupId, children,
+    return { id: groupId, name: def.name, groupId, children: leaves, reference: def.law,
       rank: Math.min(...topics.map(t => ranks.get(t.id)!), Number.MAX_SAFE_INTEGER) };
   }).filter(g => getNodeTopics(g).length > 0).sort((a, b) => a.rank - b.rank);
   const custom = sorted.filter(t => !used.has(t.id)).map(topic => ({ id: topic.id, name: topic.name, topic }));
@@ -59,6 +59,22 @@ export function getTopicGroups(discipline: Discipline): StudyContentNode[] {
 
 export function getNodeTopics(node: StudyContentNode): Topic[] {
   return node.topic ? [node.topic] : (node.children || []).flatMap(getNodeTopics);
+}
+
+/** Count only main headings; a heading is complete when every underlying subject is complete. */
+export function getMainTopicProgress(discipline: Discipline) {
+  const groups = getTopicGroups(discipline);
+  const total = groups.length;
+  const completed = groups.filter(group => {
+    const topics = getNodeTopics(group);
+    return topics.length > 0 && topics.every(topic => topic.completed);
+  }).length;
+  return {
+    total, completed, pending: total - completed,
+    percentage: total > 0 ? Math.round(100 * completed / total) : 0,
+    started: discipline.topics.some(topic => topic.completed || topic.subtopics?.some(s => s.completed))
+      || discipline.timeSpentMin > 0 || discipline.correctAnswers + discipline.wrongAnswers > 0,
+  };
 }
 
 export function setContentCompletion(discipline: Discipline, ids: string[], completed: boolean): Discipline {

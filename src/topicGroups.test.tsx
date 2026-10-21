@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 import { renderToStaticMarkup } from 'react-dom/server';
 import syllabus from './data/tjsp2026.json';
 import { Discipline, Topic } from './types';
-import { getNodeStats, getNodeTopics, getTopicGroups, setContentCompletion } from './topicGroups';
+import { getMainTopicProgress, getNodeStats, getNodeTopics, getTopicGroups, setContentCompletion } from './topicGroups';
 import StudyTopicsTree from './components/StudyTopicsTree';
 import StudyTopicOptions from './components/StudyTopicOptions';
 
@@ -24,14 +24,15 @@ test('agrupa as 287 unidades uma vez, preservando IDs, nomes e conclusões', () 
   assert.equal(count, 287);
 });
 
-test('Excel contém apenas seus 11 assuntos e as leis ficam sob o título correspondente', () => {
+test('Excel contém apenas seus 11 assuntos e as leis ficam como referência sem nível intermediário', () => {
   const inf = getTopicGroups(disciplines.find(d => d.id === 'tjsp_INF')!);
   const excel = inf.find(g => g.name === 'Excel')!;
   assert.equal(getNodeTopics(excel).length, 11);
   assert.deepEqual(getNodeTopics(excel).map(t => t.id).sort(), Array.from({ length: 11 }, (_, i) => `tjsp_INF_${String(i + 18).padStart(3, '0')}`).sort());
   const internal = getTopicGroups(disciplines.find(d => d.id === 'tjsp_LI')!);
   const eproc = internal.find(g => g.name.includes('eproc'))!;
-  assert.equal(eproc.children![0].name, 'Resolução TJSP nº 963/2025');
+  assert.equal(eproc.reference, 'Resolução TJSP nº 963/2025');
+  assert(eproc.children!.every(child => !!child.topic && !child.children));
   assert.equal(getNodeTopics(eproc).length, 3);
   assert.equal(inf[0].name, 'Windows');
 });
@@ -76,4 +77,35 @@ test('renderiza títulos, leis, subtópicos numerados e opções com os IDs orig
   assert(options.includes('optgroup'));
   assert(options.includes('value="tjsp_INF_021"'));
   assert.equal((options.match(/<option /g) || []).length, 40);
+});
+
+test('concluído/pendente considera 46 tópicos principais e nunca as 287 unidades detalhadas', () => {
+  assert.equal(disciplines.reduce((n, d) => n + getMainTopicProgress(d).total, 0), 46);
+  const allDone = disciplines.map(d => ({ ...d, topics: d.topics.map(t => ({ ...t, completed: true })) }));
+  assert.equal(allDone.reduce((n, d) => n + getMainTopicProgress(d).completed, 0), 46);
+  allDone[0].topics[0].completed = false;
+  assert.equal(allDone.reduce((n, d) => n + getMainTopicProgress(d).completed, 0), 45);
+  assert.equal(allDone.reduce((n, d) => n + getMainTopicProgress(d).pending, 0), 1);
+});
+
+test('subtópicos parciais não concluem o principal; concluir Excel conta um tópico e não onze', () => {
+  const d = disciplines.find(d => d.id === 'tjsp_INF')!;
+  const ids = getNodeTopics(getTopicGroups(d).find(g => g.name === 'Excel')!).map(t => t.id);
+  const partial = setContentCompletion(d, ids.slice(0, 1), true);
+  assert.deepEqual(getMainTopicProgress(partial), { total: 5, completed: 0, pending: 5, percentage: 0, started: true });
+  const completed = setContentCompletion(partial, ids, true);
+  assert.deepEqual(getMainTopicProgress(completed), { total: 5, completed: 1, pending: 4, percentage: 20, started: true });
+  assert.equal(partial.topics.find(t => t.id === ids[0])!.completed, true);
+});
+
+test('todos os tópicos exibem subtópicos diretos; não há mais um nível de código ou lei', () => {
+  for (const d of disciplines) for (const group of getTopicGroups(d)) {
+    assert(group.children!.every(child => !!child.topic && !child.children));
+  }
+  const d = disciplines.find(d => d.id === 'tjsp_DP')!;
+  const html = renderToStaticMarkup(<StudyTopicsTree discipline={d} activities={[]} exercises={[]} onSetCompletion={() => {}} onRename={() => {}} onDelete={() => {}} onAdd={() => {}} onToggleSubtopic={() => {}} />);
+  assert.equal((html.match(/<details /g) || []).length, 4);
+  assert(!html.includes('1.1.1-'));
+  assert(!html.includes('1.1- Código Penal'));
+  assert(html.includes('Código Penal'));
 });

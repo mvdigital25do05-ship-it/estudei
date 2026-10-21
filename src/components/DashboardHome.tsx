@@ -41,6 +41,7 @@ import { MOTIVATIONAL_QUOTES } from '../data';
 import { formatMinutes, formatHours, getLocalDateString, getLogDateKey, formatTopicName } from '../utils';
 import { getStudyTopics } from '../studyOrder';
 import StudyTopicOptions from './StudyTopicOptions';
+import { getMainTopicProgress } from '../topicGroups';
 
 interface DashboardHomeProps {
   disciplines: Discipline[];
@@ -494,8 +495,9 @@ export default function DashboardHome({
   const totalAnswers = totalCorrect + totalWrong;
   const overallAccuracy = totalAnswers > 0 ? Math.round((totalCorrect / totalAnswers) * 100) : 0;
 
-  const totalTopics = disciplines.reduce((acc, curr) => acc + curr.topicsTotal, 0);
-  const doneTopics = disciplines.reduce((acc, curr) => acc + curr.topicsDone, 0);
+  const mainTopicProgress = disciplines.map(getMainTopicProgress);
+  const totalTopics = mainTopicProgress.reduce((acc, curr) => acc + curr.total, 0);
+  const doneTopics = mainTopicProgress.reduce((acc, curr) => acc + curr.completed, 0);
   const overallSyllabusProgress = totalTopics > 0 ? Math.round((doneTopics / totalTopics) * 100) : 0;
 
   // --- Desempenho Filter State & Calculations ---

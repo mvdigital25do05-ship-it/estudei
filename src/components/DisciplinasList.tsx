@@ -31,7 +31,7 @@ import {
 import { Discipline, Topic, ExerciseLog, ActivityLog } from '../types';
 import { formatMinutes, formatTopicName } from '../utils';
 import { getStudyTopics, hasRecommendedStudyOrder } from '../studyOrder';
-import { hasTopicGroups, setContentCompletion } from '../topicGroups';
+import { getMainTopicProgress, hasTopicGroups, setContentCompletion } from '../topicGroups';
 import StudyTopicsTree from './StudyTopicsTree';
 import StudyTopicOptions from './StudyTopicOptions';
 
@@ -118,6 +118,7 @@ export default function DisciplinasList({
 
   // Synchronized active discipline
   const activeDiscipline = disciplines.find((d) => d.id === selectedDiscipline?.id) || null;
+  const activeProgress = activeDiscipline ? getMainTopicProgress(activeDiscipline) : { total: 0, completed: 0, pending: 0, percentage: 0, started: false };
 
   const handleAddTempTopic = () => {
     if (topicInput.trim()) {
@@ -404,14 +405,11 @@ export default function DisciplinasList({
   }, [exerciseLogs]);
 
   const filteredDisciplines = disciplines.filter((d) => {
-    const accuracy = d.correctAnswers + d.wrongAnswers > 0 
-      ? (d.correctAnswers / (d.correctAnswers + d.wrongAnswers)) * 100 
-      : 0;
-    const progress = d.topicsTotal > 0 ? (d.topicsDone / d.topicsTotal) * 100 : 0;
+    const progress = getMainTopicProgress(d);
     
-    if (filter === 'Concluídas') return progress >= 100;
-    if (filter === 'Em Andamento') return progress > 0 && progress < 100;
-    if (filter === 'Não Iniciadas') return progress === 0;
+    if (filter === 'Concluídas') return progress.total > 0 && progress.pending === 0;
+    if (filter === 'Em Andamento') return progress.started && (progress.pending > 0 || progress.total === 0);
+    if (filter === 'Não Iniciadas') return !progress.started && progress.completed === 0;
     return true;
   });
 
@@ -499,7 +497,8 @@ export default function DisciplinasList({
         
         {filteredDisciplines.map((d) => {
           const IconComponent = ICONS_MAP[d.icon] || BookOpen;
-          const progressPercent = d.topicsTotal > 0 ? Math.round((d.topicsDone / d.topicsTotal) * 100) : 0;
+          const topicProgress = getMainTopicProgress(d);
+          const progressPercent = topicProgress.percentage;
           
           return (
             <div 
@@ -529,7 +528,7 @@ export default function DisciplinasList({
                       {d.name}
                     </h3>
                     <p className="font-sans text-[11px] text-slate-400 font-bold mt-1">
-                      {d.topicsDone} de {d.topicsTotal} {hasTopicGroups(d) ? 'Assuntos Concluídos' : 'Tópicos Concluídos'}
+                      {topicProgress.completed} de {topicProgress.total} Tópicos Concluídos
                     </p>
                   </div>
                 </div>
@@ -1283,16 +1282,16 @@ export default function DisciplinasList({
               <div className="bg-slate-50/75 p-3 rounded-lg border border-slate-100/50 space-y-1.5">
                 <div className="flex justify-between text-xs font-bold text-slate-600">
                   <span>Conclusão de Tópicos</span>
-                  <span className="text-primary font-mono">{activeDiscipline.topicsTotal > 0 ? Math.round((activeDiscipline.topicsDone / activeDiscipline.topicsTotal) * 100) : 0}%</span>
+                  <span className="text-primary font-mono">{activeProgress.percentage}%</span>
                 </div>
                 <div className="w-full bg-slate-200/60 rounded-full h-2 overflow-hidden">
                   <div 
                     className="h-full bg-primary rounded-full transition-all duration-300" 
-                    style={{ width: `${activeDiscipline.topicsTotal > 0 ? (activeDiscipline.topicsDone / activeDiscipline.topicsTotal) * 100 : 0}%` }}
+                    style={{ width: `${activeProgress.percentage}%` }}
                   />
                 </div>
                 <div className="text-[10px] text-slate-400 font-medium pt-0.5">
-                  {activeDiscipline.topicsDone} concluídos de {activeDiscipline.topicsTotal} {hasTopicGroups(activeDiscipline) ? 'assuntos cadastrados' : 'tópicos cadastrados'}
+                  {activeProgress.completed} concluídos e {activeProgress.pending} pendentes de {activeProgress.total} tópicos principais
                 </div>
               </div>
 
@@ -1302,7 +1301,7 @@ export default function DisciplinasList({
                   {hasTopicGroups(activeDiscipline) ? 'Tópicos e subtópicos do conteúdo programático' : hasRecommendedStudyOrder(activeDiscipline) ? 'Ordem recomendada de estudo' : 'Lista Customizada de Tópicos'}
                 </label>
                 {hasRecommendedStudyOrder(activeDiscipline) && <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Divisão do checklist fornecido, em sequência provisória de prioridade e pré-requisitos. Cada assunto mantém seu progresso.
+                  Tópicos principais com subtópicos diretos, na sequência de estudo. Um tópico conta como concluído quando todos os seus subtópicos estiverem marcados.
                 </p>}
                 
                 {/* Add dynamic topic form */}
@@ -1609,7 +1608,7 @@ export default function DisciplinasList({
               </div>
 
               <div className="text-[10px] text-slate-400 font-bold text-center leading-relaxed italic">
-                O progresso nesta matéria representa {activeDiscipline.topicsTotal > 0 ? Math.round((activeDiscipline.topicsDone / activeDiscipline.topicsTotal) * 100) : 0}% dos tópicos cadastrados neste cargo.
+                O progresso nesta matéria representa {activeProgress.percentage}% dos tópicos principais cadastrados neste cargo.
               </div>
 
               <button 

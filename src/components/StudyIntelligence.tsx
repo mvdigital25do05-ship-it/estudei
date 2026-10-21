@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { ActivityLog, Discipline, ExerciseLog } from '../types';
 import { formatMinutes, getLocalDateString, getLogDateKey, formatTopicName } from '../utils';
 import { BarChart3, BookOpenCheck, CalendarDays, Target } from 'lucide-react';
+import { getMainTopicProgress } from '../topicGroups';
 
 interface StudyIntelligenceProps {
   disciplines: Discipline[];
@@ -30,9 +31,9 @@ export default function StudyIntelligence({ disciplines, exerciseLogs, activityL
       const wrong = Math.max(0, discipline.wrongAnswers || 0);
       const total = correct + wrong;
       const accuracy = total ? Math.round((correct / total) * 100) : null;
-      const topics = discipline.topics || [];
-      const completed = topics.filter((topic) => topic.completed).length;
-      const coverage = topics.length ? Math.round((completed / topics.length) * 100) : 0;
+      const progress = getMainTopicProgress(discipline);
+      const completed = progress.completed;
+      const coverage = progress.percentage;
       let priority: StudyPriority = 'C';
       let action = 'Manter questões e revisões periódicas';
 
@@ -53,7 +54,7 @@ export default function StudyIntelligence({ disciplines, exerciseLogs, activityL
           ? 100 + (100 - coverage) / 4 + (accuracy === null ? 15 : 100 - accuracy) / 4
           : 100 - coverage;
 
-      return { id: discipline.id, name: discipline.name, total, accuracy, coverage, completed, topicsTotal: topics.length, priority, action, score };
+      return { id: discipline.id, name: discipline.name, total, accuracy, coverage, completed, topicsTotal: progress.total, priority, action, score };
     }).sort((a, b) => b.score - a.score || a.name.localeCompare(b.name, 'pt-BR'));
 
     // Activity logs and exercise logs can represent the same questions.
