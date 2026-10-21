@@ -24,15 +24,29 @@ export default function BackupButton() {
     try {
       const userSnap = await getDoc(doc(db, 'users', user.uid));
       const profilesSnap = await getDocs(collection(db, 'users', user.uid, 'profiles'));
-      const backup = await createBackup({
-        user: userSnap.exists() ? userSnap.data() : null,
-        profiles: profilesSnap.docs.map(profile => ({
+      // A failed read in ANY profile's error subcollection must abort the
+      // export, rather than silently generating an incomplete backup.
+      const profiles = await Promise.all(profilesSnap.docs.map(async profile => {
+        const noteSnap = await getDocs(collection(db, 'users', user.uid,
+          'profiles', profile.id, 'errors'));
+        return {
           documentId: profile.id,
           data: profile.data(),
-        })),
+          errors: noteSnap.docs.map(note => ({
+            documentId: note.id,
+            data: note.data(),
+          })),
+        };
+      }));
+      const backup = await createBackup({
+        user: userSnap.exists() ? userSnap.data() : null,
+        profiles,
       });
-
-      const blob = new Blob([JSON.stringify(backup, null, 2)], {
+      const serialized = JSON.stringify(backup, null, 2);
+      if (new Blob([serialized]).size > MAX_BACKUP_FILE_BYTES) {
+        throw new Error('Backup maior que 30 MB. Não foi exportado; será necessário dividir os dados.');
+      }
+      const blob = new Blob([serialized], {
         type: 'application/json;charset=utf-8',
       });
       const url = URL.createObjectURL(blob);
@@ -48,7 +62,9 @@ export default function BackupButton() {
       }
     } catch (cause) {
       console.error('Falha na exportação do backup', cause);
-      setError('Não foi possível exportar. Verifique sua conexão e tente novamente.');
+      setError(cause instanceof Error
+        ? 'Não foi possível concluir o backup: ' + cause.message
+        : 'Não foi possível exportar. Verifique a conexão e as regras do Firestore.');
     } finally {
       setWorking(false);
     }
@@ -85,7 +101,7 @@ export default function BackupButton() {
           type="button"
           onClick={exportBackup}
           disabled={working || checking}
-          title="Exportar todos os perfis e históricos do Firebase em JSON"
+          title="Exportar perfis, históricos e cadernos de erros em JSON v3"
           className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-[11px] font-bold text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
         >
           {working ? <Loader2 size={14} className="animate-spin" /> : <Download size={14} />}
@@ -127,9 +143,15 @@ export default function BackupButton() {
             {inspection.integrity === 'verified' && ' · Integridade verificada'}
           </p>
           <p className="mt-1">
-            {inspection.profileCount} perfil(is), {inspection.exerciseRecords} registros de questões,
-            {' '}{inspection.activityRecords} atividades e {inspection.questionsCount} questões contabilizadas.
+            Backup v{inspection.version ?? '?'}: {inspection.profileCount} perfil(is),
+            {' '}{inspection.exerciseRecords} registros de questões,
+            {' '}{inspection.activityRecords} atividades, {inspection.questionsCount} questões.
           </p>
+          {inspection.version === 3 && (
+            <p className="mt-1">
+              {inspection.errorNotes} erros individuais e {inspection.flashcards} flashcards cadastrados.
+            </p>
+          )}
           {inspection.errors.map((issue, i) => <p key={`error-${i}`} className="mt-1">Erro: {issue}</p>)}
           {inspection.warnings.map((notice, i) => <p key={`warn-${i}`} className="mt-1">Aviso: {notice}</p>)}
           <p className="mt-1 opacity-80">Somente leitura local. Seus dados na nuvem não foram alterados.</p>
