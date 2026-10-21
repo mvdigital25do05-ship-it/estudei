@@ -42,6 +42,7 @@ test('respeita recortes essenciais do edital original 2026', () => {
 test('reaplicar matriz TJSP não cria duplicatas e conserva identificadores', () => {
   const one = previewOutlineMerge([], TJSP_2026_OUTLINE);
   one.disciplines[0].topics[0].completed = true;
+  one.disciplines[0].topicsDone = 1;
   one.disciplines[0].timeSpentMin = 240;
   const again = previewOutlineMerge(one.disciplines, TJSP_2026_OUTLINE);
   assert.equal(again.stats.newDisciplines, 0);
