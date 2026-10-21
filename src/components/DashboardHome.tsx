@@ -982,7 +982,19 @@ export default function DashboardHome({
         </button>
       </div>
       
-      <StudyIntelligence disciplines={disciplines} exerciseLogs={exerciseLogs} activityLogs={activityLogs} />
+      <StudyIntelligence
+        disciplines={disciplines}
+        exerciseLogs={exerciseLogs}
+        activityLogs={activityLogs}
+        onStartTopic={(disciplineId, topicId) => {
+          const selected = disciplines.find(d => d.id === disciplineId);
+          if (!selected || !selected.topics.some(t => t.id === topicId)) return;
+          setStudyDisciplineId(disciplineId);
+          setStudyTopicId(topicId);
+          setStudyConcludeTopic(false);
+          setShowAddStudyModal(true);
+        }}
+      />
 
       {/* 1. Upper Dynamic Stats Row */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
