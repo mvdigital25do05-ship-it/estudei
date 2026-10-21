@@ -3,6 +3,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { getAuth, connectAuthEmulator, signInAnonymously, signOut } from 'firebase/auth';
+import { createBackup } from '../src/backup.ts';
+import { restoreBackupAtomically } from '../src/atomicRecovery.ts';
 import { doc, getDoc, getDocs, collection, setDoc, getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
 const PROJECT_ID = 'demo-estudei-tjsp';
@@ -74,6 +76,25 @@ test('banco nomeado autentica proprietário e isola caderno de erros', async () 
     });
     assert.equal((await getDoc(errorRef)).data()?.front,'Conceito?');
     assert.equal((await getDocs(collection(db,'users',uid,'profiles','tjsp','errors'))).size,1);
+
+    // Verify atomic recovery on a named database with actual Auth Emulator.
+    const originalProfile=(await getDoc(profileRef)).data();
+    const originalNote=(await getDoc(errorRef)).data();
+    const originalBackup=await createBackup({
+      user:(await getDoc(accountRef)).data(),
+      profiles:[{
+        documentId:'tjsp',
+        data:originalProfile,
+        errors:[{documentId:'e1',data:originalNote}],
+      }],
+    });
+    const recovered=await restoreBackupAtomically(db,uid,originalBackup,'tjsp');
+    const clonedRef=doc(db,'users',uid,'profiles',recovered.newProfileId);
+    assert.equal((await getDoc(clonedRef)).data()?.name,'Plano simulado (recuperado)');
+    const copiedNote=await getDoc(doc(clonedRef,'errors','e1'));
+    assert.equal(copiedNote.data()?.profileId,recovered.newProfileId);
+    assert.equal(copiedNote.data()?.back,'Revisão.');
+    assert.equal((await getDoc(profileRef)).data()?.name,'Plano simulado');
 
     // Signing in never grants access to another user's records.
     await assert.rejects(getDoc(doc(db,'users','third-party','profiles','sensitive')),
