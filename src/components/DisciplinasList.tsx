@@ -1365,7 +1365,7 @@ export default function DisciplinasList({
                       const totalTopicQuestions = totalTopicCorrect + totalTopicWrong;
                       const topicAccuracy = totalTopicQuestions > 0 ? Math.round((totalTopicCorrect / totalTopicQuestions) * 100) : 0;
 
-                      const topicActivityLogs = activityLogs.filter(log => log.topicId === topic.id);
+                      const topicActivityLogs = activityLogs.filter(log => log.topicId === topic.id && log.disciplineName === activeDiscipline.name);
                       const totalTopicMins = topicActivityLogs.reduce((acc, curr) => acc + curr.timeSpentMin, 0);
                       const studyHoursStr = formatMinutes(totalTopicMins);
 
