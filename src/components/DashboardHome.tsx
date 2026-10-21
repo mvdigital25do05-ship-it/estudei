@@ -36,6 +36,7 @@ import {
 } from 'lucide-react';
 import AllStudiedDaysModal from './AllStudiedDaysModal';
 import StudyIntelligence from './StudyIntelligence';
+import TJSPExamDistribution from './TJSPExamDistribution';
 import { Discipline, Reminder, ActivityLog, StreakDay, ExerciseLog } from '../types';
 import { MOTIVATIONAL_QUOTES } from '../data';
 import { formatMinutes, formatHours, getLocalDateString, getLogDateKey } from '../utils';
@@ -982,6 +983,8 @@ export default function DashboardHome({
         </button>
       </div>
       
+      {/(tjsp|escrevente)/i.test(`${activeProfileName} ${examName}`) && <TJSPExamDistribution />}
+
       <StudyIntelligence
         disciplines={disciplines}
         exerciseLogs={exerciseLogs}
