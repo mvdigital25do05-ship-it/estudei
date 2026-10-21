@@ -94,3 +94,37 @@ nem um teste do banco nomeado de produção.
 
 Documentação: https://firebase.google.com/docs/firestore/security/test-rules-emulator
 e https://firebase.google.com/docs/emulator-suite/connect_firestore
+
+## Novo teste de segurança do banco nomeado (emulador)
+
+A aplicação seleciona um banco Firestore **nomeado**, não `(default)`.
+Foi adicionado `firebase.named.emulator.json` e um teste com o SDK modular
+real em `tests/firestore.named.emulator.test.mjs` que conecta ao mesmo ID
+de banco sob projeto `demo-estudei-tjsp`, completamente fictício.
+
+O teste tenta ler um plano e um erro e escrever uma conta **sem login**.
+Todas as três operações devem falhar com `permission-denied`. Esse é um
+teste de **negação**: se o Firebase CLI criar implicitamente o banco com
+regras abertas, o teste obrigatoriamente falhará e bloqueará o merge.
+
+A configuração de vários bancos no emulador pode variar conforme a versão
+do Firebase CLI; qualquer falha precisa ser investigada, jamais corrigida
+por relaxamento das regras.
+
+Esta verificação **não comprova** que regras equivalentes estejam
+implantadas no banco nomeado real, nem substitui testes positivos de
+leitura/gravação por usuários autenticados no ambiente de homologação
+com seu próprio projeto Firebase.
+
+## Troca segura de planos de estudo
+
+`src/profilePersistence.ts` captura o estado de estudo atual, mantendo
+ID, nome e metadados do plano. O botão de troca agora aguarda a gravação
+do plano de origem, na fila sequencial de Firestore, **antes** de carregar
+o plano de destino. Erro de gravação bloqueia a troca, sem apagar dados.
+Essa mitigação evita perder edições feitas antes de completar os 600 ms
+de debounce do salvamento automático.
+
+Limitação: outras abas/dispositivos podem continuar escrevendo no
+mesmo documento. Uma estratégia de detecção de conflito entre clientes
+será necessária antes de anunciar sincronização multi-dispositivo.
