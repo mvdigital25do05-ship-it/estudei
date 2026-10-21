@@ -3,6 +3,7 @@ import { after, before, beforeEach, test } from 'node:test';
 import assert from 'node:assert/strict';
 import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
+import { createBackup, inspectBackup } from '../src/backup.ts';
 
 const PROJECT_ID = 'demo-estudei-tjsp';
 const RULES = readFileSync('firestore.rules', 'utf8');
@@ -101,4 +102,31 @@ test('nega acesso não previsto a documentos fora do usuário autenticado', asyn
   const own = await setupUser('alice','tjsp');
   await assertFails(setDoc(doc(own,'global/secret'),{secret:true}));
   await assertFails(getDoc(doc(own,'global/secret')));
+});
+
+test('backup v3 reúne perfil e caderno real do emulador, sem perder flashcard', async () => {
+  const owner = await setupUser('alice', 'tjsp');
+  const errorRef = doc(owner, 'users/alice/profiles/tjsp/errors/errobackup');
+  await assertSucceeds(setDoc(errorRef, errorNote('errobackup', 'tjsp')));
+
+  const [userSnap, profilesSnap] = await Promise.all([
+    getDoc(doc(owner, 'users/alice')),
+    getDocs(collection(owner, 'users/alice/profiles')),
+  ]);
+  const profiles = await Promise.all(profilesSnap.docs.map(async item => {
+    const errors = await getDocs(collection(owner,'users/alice/profiles',item.id,'errors'));
+    return {
+      documentId: item.id,
+      data: item.data(),
+      errors: errors.docs.map(entry => ({ documentId: entry.id, data: entry.data() })),
+    };
+  }));
+  const backup = await createBackup({ user: userSnap.data(), profiles });
+  const inspection = await inspectBackup(backup);
+  assert.equal(backup.version,3);
+  assert.equal(inspection.valid,true);
+  assert.equal(inspection.integrity,'verified');
+  assert.equal(inspection.profileCount,1);
+  assert.equal(inspection.errorNotes,1);
+  assert.equal(inspection.flashcards,1);
 });
