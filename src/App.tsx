@@ -43,6 +43,7 @@ import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/fi
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import AuthScreen from './components/AuthScreen';
 import BackupButton from './components/BackupButton';
+import { previewOutlineMerge, type OutlineInput } from './outlineImport';
 
 export default function App() {
   // Navigation active state
@@ -886,6 +887,12 @@ export default function App() {
     setDisciplines(discs => discs.map(d => d.id === updated.id ? updated : d));
   };
 
+  const handleImportOutline = (outline: OutlineInput) => {
+    // Merge against CURRENT state, not a stale snapshot from the importer preview.
+    // Previously registered discipline/topic IDs, logs and progress are preserved.
+    setDisciplines(current => previewOutlineMerge(current, outline).disciplines);
+  };
+
   const handleDeleteDiscipline = (id: string) => {
     setDisciplines(disciplines.filter(d => d.id !== id));
   };
@@ -1668,6 +1675,7 @@ export default function App() {
               onAddDiscipline={handleAddDiscipline}
               onDeleteDiscipline={handleDeleteDiscipline}
               onUpdateDiscipline={handleUpdateDiscipline}
+              onImportOutline={handleImportOutline}
               exerciseLogs={exerciseLogs}
               activityLogs={activityLogs}
               onAddExerciseLog={handleAddExerciseLog}
