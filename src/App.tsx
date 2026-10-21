@@ -478,7 +478,7 @@ export default function App() {
     profileSwitchInProgressRef.current = false;
   };
 
-  const handleCreateProfile = (name: string, templateType: string, initialDisciplines?: Discipline[]) => {
+  const handleCreateProfile = async (name: string, templateType: string, initialDisciplines?: Discipline[]): Promise<boolean> => {
     let initialDisc: Discipline[] = initialDisciplines && initialDisciplines.length > 0 
       ? initialDisciplines 
       : [];
@@ -748,7 +748,7 @@ export default function App() {
     }
 
     const newProfile: CargoPlan = {
-      id: `profile_${Date.now()}`,
+      id: auth.currentUser ? doc(collection(db, 'users', auth.currentUser.uid, 'profiles')).id : `profile_${Date.now()}`,
       name,
       disciplines: initialDisc,
       mockTests: [],
@@ -763,45 +763,77 @@ export default function App() {
       examName: ''
     };
 
-    // Save previous active states in old active profile
-    setProfiles(prev => prev.map(p => {
-      if (p.id === activeProfileId) {
-        return {
-          ...p,
-          disciplines,
-          mockTests,
-          exerciseLogs,
-          activityLogs,
-          studyBlocks,
-          weeklyHours,
-          weeklyQuestions,
-          weeklyReviews,
-          examDate,
-          examName
-        };
+    // Save before switching: the legacy implementation hydrated the new
+    // profile immediately, cancelling the 600ms autosave of the old one.
+    const currentUser = auth.currentUser;
+    if (!isLoaded || !currentUser || profileSwitchInProgressRef.current) {
+      alert('Aguarde o carregamento e o salvamento do plano anterior.');
+      return false;
+    }
+    if (!name.trim() || name.length > 100 || profiles.some(p => p.id === newProfile.id)) {
+      alert('Nome ou identificador do novo plano inválido.');
+      return false;
+    }
+
+    const previous = profiles.find(p => p.id === activeProfileId);
+    if (activeProfileId && !previous) {
+      alert('O plano atual não foi encontrado. Atualize a página antes de criar outro.');
+      return false;
+    }
+    profileSwitchInProgressRef.current = true;
+    beginSave();
+    let failed = false;
+    try {
+      if (previous) {
+        const snapshot = captureProfileSnapshot(previous, {
+          disciplines, mockTests, exerciseLogs, activityLogs, studyBlocks,
+          weeklyHours, weeklyQuestions, weeklyReviews, examDate, examName,
+        });
+        await saveQueueRef.current.enqueue(`profiles/${currentUser.uid}/${snapshot.id}`, () =>
+          setDoc(doc(db, 'users', currentUser.uid, 'profiles', snapshot.id),
+            sanitizeForFirestore(snapshot), { merge: true })
+        );
       }
-      return p;
-    }));
 
-    // Add new profile and set it as active!
-    setProfiles(prev => [...prev, newProfile]);
+      await saveQueueRef.current.enqueue(`profiles/${currentUser.uid}/${newProfile.id}`, () =>
+        setDoc(doc(db, 'users', currentUser.uid, 'profiles', newProfile.id),
+          sanitizeForFirestore(newProfile))
+      );
 
-    // Hydrate local states
-    setDisciplines(newProfile.disciplines);
-    setMockTests(newProfile.mockTests);
-    setExerciseLogs(newProfile.exerciseLogs);
-    setActivityLogs(newProfile.activityLogs);
-    setStudyBlocks(newProfile.studyBlocks);
-    setWeeklyHours(newProfile.weeklyHours);
-    setWeeklyQuestions(newProfile.weeklyQuestions);
-    setWeeklyReviews(newProfile.weeklyReviews);
-    setExamDate('');
-    setExamName('');
-    setActiveProfileId(newProfile.id);
-
-    // Switch view to disciplines tab immediately and open the creation modal
-    setActiveTab('disciplinas');
-    setAutoOpenAddDiscipline(true);
+      if (auth.currentUser?.uid !== currentUser.uid) {
+        throw new Error('A sessão mudou durante a criação do plano.');
+      }
+      setProfiles(current => [
+        ...current.map(p => p.id === previous?.id
+          ? captureProfileSnapshot(p, {
+            disciplines, mockTests, exerciseLogs, activityLogs, studyBlocks,
+            weeklyHours, weeklyQuestions, weeklyReviews, examDate, examName,
+          }) : p),
+        newProfile,
+      ]);
+      setDisciplines(newProfile.disciplines);
+      setMockTests(newProfile.mockTests);
+      setExerciseLogs(newProfile.exerciseLogs);
+      setActivityLogs(newProfile.activityLogs);
+      setStudyBlocks(newProfile.studyBlocks);
+      setWeeklyHours(newProfile.weeklyHours);
+      setWeeklyQuestions(newProfile.weeklyQuestions);
+      setWeeklyReviews(newProfile.weeklyReviews);
+      setExamDate('');
+      setExamName('');
+      setActiveProfileId(newProfile.id);
+      setActiveTab('disciplinas');
+      setAutoOpenAddDiscipline(true);
+      return true;
+    } catch (cause) {
+      failed = true;
+      setSaveErrorMsg(cause instanceof Error ? cause.message : String(cause));
+      alert('Não foi possível criar o plano com segurança. Seu plano atual foi preservado.');
+      return false;
+    } finally {
+      finishSave(failed);
+      profileSwitchInProgressRef.current = false;
+    }
   };
 
   const handleDeleteProfile = async (id: string) => {
@@ -855,8 +887,35 @@ export default function App() {
     }
   };
 
-  const handleUpdateProfileName = (id: string, newName: string) => {
-    setProfiles(prev => prev.map(p => p.id === id ? { ...p, name: newName } : p));
+  const handleUpdateProfileName = async (id: string, newName: string): Promise<boolean> => {
+    const currentUser = auth.currentUser;
+    if (!currentUser || !isLoaded || profileSwitchInProgressRef.current ||
+        !profiles.some(p => p.id === id) ||
+        !newName.trim() || newName.length > 100 ||
+        deletedProfileIdsRef.current.has(id)) return false;
+    profileSwitchInProgressRef.current = true;
+    beginSave();
+    let failed = false;
+    try {
+      const ref = doc(db, 'users', currentUser.uid, 'profiles', id);
+      // Serializes rename behind pending autosaves, even for inactive plans.
+      await saveQueueRef.current.enqueue(`profiles/${currentUser.uid}/${id}`, () =>
+        setDoc(ref, {name: newName.trim()}, {merge: true})
+      );
+      if (auth.currentUser?.uid !== currentUser.uid) {
+        throw new Error('A sessão mudou durante a edição.');
+      }
+      setProfiles(prev => prev.map(p => p.id === id ? {...p, name: newName.trim()} : p));
+      return true;
+    } catch (cause) {
+      failed = true;
+      setSaveErrorMsg(cause instanceof Error ? cause.message : String(cause));
+      alert('Não foi possível salvar o novo nome. O nome anterior foi preservado.');
+      return false;
+    } finally {
+      finishSave(failed);
+      profileSwitchInProgressRef.current = false;
+    }
   };
 
   const handleUpdateExamInfo = (name: string, date: string) => {
