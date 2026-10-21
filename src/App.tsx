@@ -96,6 +96,7 @@ export default function App() {
   const [saveErrorMsg, setSaveErrorMsg] = useState<string>('');
   const saveQueueRef = useRef(createSequentialWriter());
   const pendingWritesRef = useRef(0);
+  const pendingDebouncesRef = useRef(0);
   // A deleted profile must never be silently recreated by a late autosave.
   const deletedProfileIdsRef = useRef(new Set<string>());
   const profileSwitchInProgressRef = useRef(false);
@@ -108,7 +109,7 @@ export default function App() {
   const finishSave = (failed: boolean) => {
     pendingWritesRef.current = Math.max(0, pendingWritesRef.current - 1);
     if (failed) setSaveStatus('error');
-    else if (pendingWritesRef.current === 0) {
+    else if (pendingWritesRef.current === 0 && pendingDebouncesRef.current === 0) {
       setSaveStatus(previous => previous === 'saving' ? 'saved' : previous);
     }
   };
@@ -353,8 +354,22 @@ export default function App() {
       }
     };
 
-    const timeout = setTimeout(syncUserData, 600);
-    return () => clearTimeout(timeout);
+    // Mark dirty at edit time, not 600ms later: backups must not export
+    // a cloud snapshot before the pending debounce has actually persisted.
+    pendingDebouncesRef.current++;
+    setSaveStatus('saving');
+    let scheduled = true;
+    const timeout = setTimeout(() => {
+      scheduled = false;
+      pendingDebouncesRef.current = Math.max(0, pendingDebouncesRef.current - 1);
+      void syncUserData();
+    }, 600);
+    return () => {
+      clearTimeout(timeout);
+      if (scheduled) {
+        pendingDebouncesRef.current = Math.max(0, pendingDebouncesRef.current - 1);
+      }
+    };
   }, [activeProfileId, reminders, isLoaded, user]);
 
   useEffect(() => {
@@ -397,8 +412,20 @@ export default function App() {
       }
     };
 
-    const timeout = setTimeout(syncProfileData, 600);
-    return () => clearTimeout(timeout);
+    pendingDebouncesRef.current++;
+    setSaveStatus('saving');
+    let scheduled = true;
+    const timeout = setTimeout(() => {
+      scheduled = false;
+      pendingDebouncesRef.current = Math.max(0, pendingDebouncesRef.current - 1);
+      void syncProfileData();
+    }, 600);
+    return () => {
+      clearTimeout(timeout);
+      if (scheduled) {
+        pendingDebouncesRef.current = Math.max(0, pendingDebouncesRef.current - 1);
+      }
+    };
   }, [
     disciplines,
     mockTests,
@@ -1670,7 +1697,7 @@ export default function App() {
               </div>
             )}
 
-            <BackupButton />
+            <BackupButton canExport={isLoaded && saveStatus === 'saved'} />
 
             {/* Help Quick Reference button */}
             <button 
