@@ -184,7 +184,7 @@ Os novos registros devem ser armazenados em coleções separadas ou estrutura pa
 - Tópicos ainda não classificados permanecem visíveis, assim como matérias sem amostra de questões. O painel não preenche desempenho ou prioridades inexistentes.
 
 ### Importação privada de evidências A/B/C do estudante
-- Foi localizado um planejamento pessoal A/B/C do usuário, mas **nenhum conteúdo de sua planilha foi publicado no repositório**.
+- **Nenhum conteúdo de planilhas pessoais é incorporado ao repositório.** Os dados só são lidos localmente no navegador quando o estudante decide selecioná-los.
 - `src/priorityEvidence.ts`: leitor seguro de tabelas CSV/TSV com colunas **Disciplina, ABC, Assunto**, e colunas opcionais **Recorte, Fundamento**; suporta campos entre aspas e apelidos de matérias, como `Processo Civil` -> `Direito Processual Civil`.
 - `PriorityEvidencePanel.tsx`: o estudante pode colar a aba **Mapa ABC** ou selecionar um arquivo CSV/TSV local (sem enviar a planilha ao GitHub).
 - **Vínculos automáticos somente para nomes idênticos normalizados.** Grupos amplos de artigos que misturam A/B/C não recebem nota arbitrária. Cada associação diferente precisa de escolha humana na interface.
