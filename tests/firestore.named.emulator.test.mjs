@@ -1,10 +1,17 @@
+import { readFileSync } from 'node:fs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { initializeApp, deleteApp } from 'firebase/app';
 import { doc, getDoc, setDoc, getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
 
 const PROJECT_ID = 'demo-estudei-tjsp';
-const NAMED_DATABASE = 'ai-studio-7d8a575c-71e3-4ced-b717-0af5fd6b9a13';
+const NAMED_DATABASE = JSON.parse(readFileSync('firebase-applet-config.json','utf8')).firestoreDatabaseId;
+const emulatorConfig = JSON.parse(readFileSync('firebase.named.emulator.json','utf8'));
+if (!NAMED_DATABASE || NAMED_DATABASE === '(default)' ||
+    emulatorConfig.firestore?.database !== NAMED_DATABASE ||
+    emulatorConfig.firestore?.rules !== 'firestore.rules') {
+  throw new Error('O teste do banco nomeado não usa o mesmo ID e as mesmas regras do aplicativo.');
+}
 
 /**
  * Explicitly target the same DATABASE ID shape as the Estudei app.
