@@ -107,3 +107,25 @@ test('ordena resultados por urgência sem modificar a lista original', () => {
   assert.equal(input[0].id, 'd2');
   assert.equal(results[0].disciplineId, 'd1');
 });
+
+test('repetições explicitamente marcadas não determinam o domínio', () => {
+  const results = buildTopicDiagnostics([discipline('A')], [
+    batch('repeat', 30, 0, { isNewQuestions: false, createdAtMs: 30 }),
+    batch('new', 6, 14, { isNewQuestions: true, createdAtMs: 20 }),
+  ]);
+  assert.equal(results[0].questionsEvaluated, 20);
+  assert.equal(results[0].newQuestionsEvaluated, 20);
+  assert.equal(results[0].accuracy, 30);
+  assert.equal(results[0].phase, 'base');
+});
+
+test('registros legados sem novidade informada continuam utilizáveis', () => {
+  const results = buildTopicDiagnostics([discipline()], [
+    batch('new', 8, 2, { isNewQuestions: true }),
+    batch('legacy', 5, 5),
+    batch('repeat', 30, 0, { isNewQuestions: false }),
+  ]);
+  assert.equal(results[0].questionsEvaluated, 20);
+  assert.equal(results[0].newQuestionsEvaluated, 10);
+  assert.equal(results[0].accuracy, 65);
+});
