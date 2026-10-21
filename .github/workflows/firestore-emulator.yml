@@ -1,0 +1,43 @@
+name: Homologar regras Firestore
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'firestore.rules'
+      - 'tests/firestore.rules.emulator.test.mjs'
+      - 'firebase.emulator.json'
+      - '.github/workflows/firestore-emulator.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  emulator-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Instalar dependências da aplicação
+        run: npm ci
+      - name: Instalar dependências exclusivas de testes
+        run: npm install --no-save --package-lock=false @firebase/rules-unit-testing@5.0.2 firebase-tools@14.27.0
+      - name: Testar regras no Firestore Emulator (projeto fictício)
+        env:
+          CI: 'true'
+          GOOGLE_CLOUD_PROJECT: demo-estudei-tjsp
+        run: >
+          ./node_modules/.bin/firebase emulators:exec
+          --config firebase.emulator.json
+          --project demo-estudei-tjsp
+          --only firestore
+          'node --test tests/firestore.rules.emulator.test.mjs'
