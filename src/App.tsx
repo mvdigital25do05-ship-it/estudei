@@ -766,64 +766,53 @@ export default function App() {
   };
 
   const handleDeleteProfile = async (id: string) => {
-    // Deleting a Firestore profile does NOT cascade to its subcollections.
-    // Refuse deletion while its dedicated error notebook contains records.
-    // Check BEFORE mutating local React state.
-    if (user) {
-      try {
-        const errorsRef = collection(db, 'users', user.uid, 'profiles', id, 'errors');
-        const existingErrors = await getDocs(query(errorsRef, limit(1)));
-        if (!existingErrors.empty) {
-          alert('Este plano possui erros individuais no caderno. Exporte e exclua esses registros antes de apagar o plano.');
-          return;
-        }
-      } catch (cause) {
-        console.error('Não foi possível conferir o caderno de erros do perfil:', cause);
-        alert('Não foi possível verificar os erros vinculados ao plano. Exclusão interrompida por segurança.');
+    const userId = auth.currentUser?.uid;
+    if (!userId || !profiles.some(p => p.id === id)) return;
+    if (deletedProfileIdsRef.current.has(id)) return;
+
+    try {
+      // Firestore does not cascade deletions to nested error notebooks.
+      const errorsRef = collection(db, 'users', userId, 'profiles', id, 'errors');
+      const existingErrors = await getDocs(query(errorsRef, limit(1)));
+      if (!existingErrors.empty) {
+        alert('Este plano possui erros individuais. Exporte e exclua os registros do caderno antes de remover o plano.');
         return;
       }
-    }
-    const filtered = profiles.filter(p => p.id !== id);
-    setProfiles(filtered);
-    
-    // If we deleted the active one, switch to the first remaining one
-    if (activeProfileId === id) {
-      if (filtered.length > 0) {
-        const first = filtered[0];
-        setDisciplines(first.disciplines);
-        setMockTests(first.mockTests);
-        setExerciseLogs(first.exerciseLogs);
-        setActivityLogs(first.activityLogs);
-        setStudyBlocks(first.studyBlocks);
-        setWeeklyHours(first.weeklyHours);
-        setWeeklyQuestions(first.weeklyQuestions);
-        setWeeklyReviews(first.weeklyReviews);
-        setExamDate(first.examDate || '');
-        setExamName(first.examName || '');
-        setActiveProfileId(first.id);
-      } else {
-        setDisciplines([]);
-        setMockTests([]);
-        setExerciseLogs([]);
-        setActivityLogs([]);
-        setStudyBlocks([]);
-        setWeeklyHours({ done: 0, total: 24 });
-        setWeeklyQuestions({ done: 0, total: 300 });
-        setWeeklyReviews({ done: 0, total: 60 });
-        setExamDate('');
-        setExamName('');
-        setActiveProfileId('');
-      }
+    } catch (cause) {
+      console.error('Erro conferindo o caderno do plano:', cause);
+      alert('Não foi possível verificar os erros do plano. Exclusão cancelada por segurança.');
+      return;
     }
 
-    if (user) {
-      try {
-        const pRef = doc(db, 'users', user.uid, 'profiles', id);
-        await deleteDoc(pRef);
-      } catch (err) {
-        console.error("Erro deletando perfil da nuvem:", err);
-        handleFirestoreError(err, OperationType.DELETE, `users/${user.uid}/profiles/${id}`);
-      }
+    deletedProfileIdsRef.current.add(id);
+    try {
+      // Wait for all pending writes BEFORE deleting. Future autosaves for
+      // this ID are blocked, so they cannot re-create the removed document.
+      await saveQueueRef.current.whenIdle(`profiles/${userId}/${id}`);
+      await deleteDoc(doc(db, 'users', userId, 'profiles', id));
+    } catch (cause) {
+      deletedProfileIdsRef.current.delete(id);
+      console.error('Erro ao remover o perfil da nuvem:', cause);
+      alert('Não foi possível excluir o plano do Firebase. Nenhum dado local foi removido.');
+      return;
+    }
+
+    const filtered = profiles.filter(p => p.id !== id);
+    setProfiles(current => current.filter(p => p.id !== id));
+
+    if (activeProfileId === id) {
+      const next = filtered[0];
+      setDisciplines(next?.disciplines || []);
+      setMockTests(next?.mockTests || []);
+      setExerciseLogs(next?.exerciseLogs || []);
+      setActivityLogs(next?.activityLogs || []);
+      setStudyBlocks(next?.studyBlocks || []);
+      setWeeklyHours(next?.weeklyHours || { done: 0, total: 24 });
+      setWeeklyQuestions(next?.weeklyQuestions || { done: 0, total: 300 });
+      setWeeklyReviews(next?.weeklyReviews || { done: 0, total: 60 });
+      setExamDate(next?.examDate || '');
+      setExamName(next?.examName || '');
+      setActiveProfileId(next?.id || '');
     }
   };
 
