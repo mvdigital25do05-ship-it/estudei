@@ -146,3 +146,30 @@ Os novos registros devem ser armazenados em coleções separadas ou estrutura pa
 4. Criar erro individual, atualizar status, exportar Anki, recarregar página e verificar persistência.
 5. Validar o comportamento da exclusão de plano e impedir órfãos.
 6. Comparar texto do Anexo VIII com eventuais retificações publicadas posteriormente.
+
+## Etapa 5: backup v3, persistência e primeira ação do dashboard
+
+### Backup v3
+- `src/backup.ts` agora gera `version: 3` e exige a presença explícita de `profiles[].errors[]` para **todos** os perfis.
+- `src/components/BackupButton.tsx` lê as subcoleções individuais do Firestore e interrompe completamente a exportação se qualquer uma falhar. Não exporta um backup aparentemente completo sem os erros.
+- SHA-256 da versão 3 cobre também todos os cadernos de erros. O verificador denuncia IDs duplicados, associações a outros perfis, conteúdos alterados e ausências de listas.
+- Backups antigos v1/v2 ainda podem ser **inspecionados**; v2 informa que não continha erros individuais. Nenhuma versão possui restauração automática.
+- A exportação v3 depende de regras Firestore que concedam leitura da subcoleção `errors`. Sem a implantação no ambiente de teste/produção, a exportação **falhará de forma segura**. Não combinar front-end novo com regras antigas em produção.
+- Um backup válido não garante que os dados possam ser restaurados: o processo de restauração precisa ser projetado e testado separadamente.
+
+### Fila de persistência
+- `src/sequentialWriter.ts`: serialização de gravações por documento, mantendo independência entre perfis e evitando que o envio antigo ultrapasse o mais recente.
+- `src/App.tsx`: gravação de perfil e metadados por fila; indicador de salvamento considera operações pendentes.
+- O login resolve o ID de perfil ativo com base nos perfis efetivamente carregados, evitando criar um perfil fantasma.
+- Exclusão de perfil primeiro verifica subcoleção de erros, bloqueia novas gravações para o ID, aguarda a fila e só então apaga o documento remoto. Atualiza o estado local somente após confirmação.
+- A fila reduz disputas entre gravações na **mesma sessão**. Não substitui sincronização entre abas/dispositivos, tratamento de conflitos ou backup.
+
+### Ação inicial no dashboard
+- `StudyIntelligence.tsx` destaca o próximo tópico sugerido, com fase pedagógica e justificativa.
+- O botão **Iniciar estudo** abre a janela de nova sessão de estudo no tópico recomendado, sem criar registros falsos.
+- Na ausência de classificação A/B/C validada, o painel informa explicitamente a limitação da recomendação.
+
+### Testes
+- `tests/backup.test.ts`: cobertura de erros, checksum, v1/v2, tentativas de backup parcial e registros órfãos.
+- `tests/sequentialWriter.test.ts`: ordem de envio, falhas de rede, isolamento entre documentos e espera antes de exclusão.
+- Ainda são necessários testes reais com autenticação, Firestore Emulator, duas abas/dispositivos e restauração simulada **antes** de qualquer integração ao ambiente de produção.
