@@ -58,3 +58,30 @@ Os novos registros devem ser armazenados em coleções separadas ou estrutura pa
 - Não contar as mesmas questões duas vezes (há sobreposição potencial entre activityLogs e exerciseLogs).
 - Priorizar questões recentes e inéditas nos diagnósticos de domínio; amostras pequenas devem ser identificadas como insuficientes.
 - Mudanças futuras no conteúdo do edital devem ser versionadas, sem reescrever históricos antigos.
+
+## Etapa 2: primeira versão implementada (branch de desenvolvimento)
+
+- Modelo de tópico atualizado com campos **opcionais**, para manter compatibilidade com perfis já gravados:
+  - `examPriority`: A/B/C de incidência do edital; ausência significa não classificado;
+  - `examPrioritySource`: indicação da origem da classificação;
+  - `learningPhase`: escolha manual opcional (base, consolidacao, dominio).
+- `src/studyStrategy.ts`: diagnóstico puro por tópico, que lê os históricos existentes sem regravá-los; compara blocos recentes de até aproximadamente 50 questões, requer pelo menos 20 para autoavaliação robusta e não duplica registros entre listas de atividades e exercícios.
+- `DisciplinasList.tsx`: controles de prioridade no edital e fase por tópico, usando a persistência atual.
+- `StudyIntelligence.tsx`: recomendações por tópico e indicadores de fase, incidência e urgência pessoal separados.
+- `tests/studyStrategy.test.ts`: regressões cobrindo desempenho, amostra insuficiente, temas com IDs repetidos em matérias distintas e separação entre importância e fraqueza.
+
+### Restrições conhecidas da Etapa 2
+
+1. A prioridade do edital depende de **fonte validada**. Não há classificação A/B/C automaticamente inventada para tópicos já cadastrados.
+2. O campo de fase é opcional; caso ausente, é calculado pelo desempenho recente ou, quando a amostra é insuficiente, pelo marcador de conclusão já existente.
+3. Exercícios antigos não registram se cada questão era inédita. O algoritmo não presume essa condição.
+4. Esta etapa é **compatível** com o armazenamento anterior: o plano ainda contém listas agregadas de históricos no Firestore.
+5. Não há migração para subcoleções, nem alteração de regras de acesso, nem gravação dos dados privados via GitHub. A normalização será executada em etapa independente, com backup real validado e migração reversível.
+6. As sugestões são heurísticas configuráveis, não uma previsão confiável de nota de corte ou garantia de aprendizagem.
+
+### Verificações
+
+- `npm run lint`
+- `npm test`
+- `npm run build`
+- Revisão manual do seletor de prioridade/fase e confirmação do salvamento/recarga dos campos no ambiente de teste autenticado.
