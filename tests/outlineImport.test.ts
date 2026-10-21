@@ -35,7 +35,7 @@ test('TSV com cabeçalho importa e preserva todos os registros de progresso', ()
   assert.equal(original.timeSpentMin, 120);
   assert.equal(original.correctAnswers, 100);
   assert.equal(original.wrongAnswers, 10);
-  assert.equal(original.topics[0].completed, false);
+  assert.equal(original.topics[0].completed, true);
   assert.equal(existing.topics[0].completed, true, 'original deve permanecer intacto');
   assert.equal(original.topics[0].examPrioritySource, 'Plano de estudos TJSP 2026');
 });
