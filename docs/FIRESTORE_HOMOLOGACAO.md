@@ -107,9 +107,13 @@ Todas as três operações devem falhar com `permission-denied`. Esse é um
 teste de **negação**: se o Firebase CLI criar implicitamente o banco com
 regras abertas, o teste obrigatoriamente falhará e bloqueará o merge.
 
-A configuração de vários bancos no emulador pode variar conforme a versão
-do Firebase CLI; qualquer falha precisa ser investigada, jamais corrigida
-por relaxamento das regras.
+Nos testes de integração, a configuração com **múltiplos bancos em array**
+não carregou as regras no Firebase CLI testado e abriu o banco simulado.
+O teste de negação detectou essa falha. Para validar o banco nomeado,
+`firebase.named.emulator.json` configura **apenas aquele banco**.
+Os testes do banco padrão permanecem em um processo separado, com
+`firebase.emulator.json`. Nenhuma regra foi relaxada para fazer os
+testes passarem.
 
 Esta verificação **não comprova** que regras equivalentes estejam
 implantadas no banco nomeado real, nem substitui testes positivos de
@@ -128,3 +132,12 @@ de debounce do salvamento automático.
 Limitação: outras abas/dispositivos podem continuar escrevendo no
 mesmo documento. Uma estratégia de detecção de conflito entre clientes
 será necessária antes de anunciar sincronização multi-dispositivo.
+
+## Status da homologação
+
+- Matriz do banco padrão: testes de proprietário, isolamento e backup v3.
+- Matriz do banco nomeado: teste separado negando três operações anônimas.
+- O fluxo é executado no GitHub Actions com projeto `demo-`; não exige
+  chaves de produção nem permissão de administrador no Firebase real.
+- Teste completo de usuário autenticado no banco nomeado de homologação
+  continua como condição de publicação.
