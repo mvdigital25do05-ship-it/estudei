@@ -115,3 +115,34 @@ Os novos registros devem ser armazenados em coleções separadas ou estrutura pa
 - Testes unitários de importação, duplicidades, preservação de IDs, prioridades, exportação e rejeição de cartões inválidos.
 - Realizar teste manual de exportação real do Firestore, importação em perfil de teste, recarga de dados e importação no Anki antes de publicação.
 - Não alterar o projeto Firebase de produção nem integrar o PR à `main` antes de validação manual.
+
+## Etapa 4: matriz TJSP oficial e caderno individual (21/10/2026 — desenvolvimento)
+
+### Matriz do edital (publicado em 19/10/2026)
+- Fonte conferida: Edital nº 02/2026, Anexo VIII, DEJESP 4542, páginas 154 a 156.
+- Arquivo original integral (consulta): https://arquivos.qconcursos.com/f/tj-sp-edital-escrevente-2026.pdf
+- `src/tjsp2026Outline.ts` contém 103 linhas organizadas em 11 matérias (seis disciplinas de Direito).
+- Cada bloco conserva recortes: Penal CP; CPP + Lei 9.099/95; CPC + Juizados; CF; Estatuto estadual e LIA; Legislação Interna; Português; Atualidades + LBI; Matemática; Informática; Raciocínio Lógico.
+- Distribuição do edital: Português 16; Direito 30; Atualidades 4; Matemática 4; Informática 9; Raciocínio Lógico 7 (70 no total).
+- Na matriz, a LC 1.111/2010 é registrada com a observação do **escopo pessoal de estudo sem anexos**. Os anexos continuam formalmente parte da lei.
+- Prioridade estratégica A/B/C é editorial, não existe no texto do edital. Nenhuma classificação foi inferida automaticamente nesta carga.
+- `OutlineImportPanel` exibe botão para carregar a matriz com **prévia** e **confirmação explícita de backup** antes de aplicar a mesclagem ao perfil ativo.
+- Não importar um conjunto completo no perfil errado: os nomes dos tópicos existentes só são vinculados por correspondência normalizada.
+
+### Banco de erros individual
+- `src/errorNotebook.ts`: tipo de registro, validação, status aberto/revisado/arquivado e exportação de flashcards separados por TAB.
+- `src/components/ErrorNotebook.tsx`: tela de registro e acompanhamento por disciplina, tópico, causa, regra e card opcional.
+- Firestore previsto: `users/{userId}/profiles/{profileId}/errors/{errorId}`; leitura e gravação isoladas por usuário e plano.
+- Regras de segurança em `firestore.rules` exigem proprietário e validam estrutura e tamanho dos campos.
+- A exclusão de perfis pela interface é bloqueada quando existirem registros no caderno, pois o Firestore não apaga subcoleções automaticamente.
+- **Atenção:** a nova tela depende da publicação das novas regras de segurança no ambiente de teste. A alteração de regras no GitHub não as instala no Firestore automaticamente.
+- O banco novo **não migra nem apaga** flashcards antigos armazenados nos `exerciseLogs`. O histórico permanece intacto para migração em etapa posterior, precedida de backup verificado.
+- Testes unitários incluem matriz, importação repetida, registros de erro e exportação Anki. O emulador das regras Firestore e testes visuais ainda estão pendentes.
+
+### Critérios antes de integrar na main
+1. Verificar backup real e conferir contagens antes/depois.
+2. Publicar as regras Firestore em **projeto de teste** e validar isolamento e autorização (usuário A não acessa notas do B).
+3. Criar perfil de teste, importar edital duas vezes e conferir IDs e contadores.
+4. Criar erro individual, atualizar status, exportar Anki, recarregar página e verificar persistência.
+5. Validar o comportamento da exclusão de plano e impedir órfãos.
+6. Comparar texto do Anexo VIII com eventuais retificações publicadas posteriormente.
