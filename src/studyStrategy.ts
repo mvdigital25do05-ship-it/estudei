@@ -87,11 +87,19 @@ export function buildTopicDiagnostics(
         return a.index - b.index;
       });
 
+      // Explicit repeats remain in the history, but should not determine
+      // whether a student has mastered a topic. Prefer known-new questions;
+      // fill any remaining sample with legacy logs whose novelty is unknown.
+      const eligible = [
+        ...matching.filter(item => item.log.isNewQuestions === true),
+        ...matching.filter(item => item.log.isNewQuestions === undefined),
+      ];
+
       let correct = 0;
       let wrong = 0;
       let fresh = 0;
 
-      for (const { log } of matching) {
+      for (const { log } of eligible) {
         if (correct + wrong >= RECENT_WINDOW) break;
         const c = safeCount(log.correctAnswers);
         const w = safeCount(log.wrongAnswers);
