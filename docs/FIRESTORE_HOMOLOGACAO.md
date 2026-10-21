@@ -141,3 +141,25 @@ será necessária antes de anunciar sincronização multi-dispositivo.
   chaves de produção nem permissão de administrador no Firebase real.
 - Teste completo de usuário autenticado no banco nomeado de homologação
   continua como condição de publicação.
+
+## Teste adicional: proprietário autenticado em banco nomeado
+
+A suíte `tests/firestore.named.emulator.test.mjs` agora possui duas
+verificações distintas sobre o mesmo ID de banco usado pelo app, mas no
+projeto `demo-estudei-tjsp`:
+
+1. Um cliente sem login deve receber `permission-denied` ao tentar ler
+   planos, consultar erros ou criar uma conta.
+2. Com Firebase Authentication **também emulado**, uma identidade fictícia
+   cria conta, plano e um erro individual no banco nomeado; em seguida,
+   lê e lista o caderno. O mesmo usuário não deve acessar um perfil
+   pertencente a outra identidade, e deve perder acesso após logout.
+
+A suíte compara o ID do banco de `firebase.named.emulator.json` com
+`firebase-applet-config.json.firestoreDatabaseId` e falha caso diverjam.
+É uma homologação com autenticação simulada, não uma verificação das
+regras publicadas no Firebase real.
+
+O fluxo de CI usa `firebase-tools@15.17.0` e executa os dois ambientes
+do emulador separadamente para impedir que a configuração experimental de
+múltiplos bancos abra o acesso.
