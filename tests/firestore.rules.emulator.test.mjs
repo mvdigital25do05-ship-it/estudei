@@ -5,6 +5,7 @@ import { initializeTestEnvironment, assertFails, assertSucceeds } from '@firebas
 import { collection, deleteDoc, doc, getDoc, getDocs, setDoc, updateDoc } from 'firebase/firestore';
 import { createBackup, inspectBackup } from '../src/backup.ts';
 import { prepareRecovery } from '../src/backupRecovery.ts';
+import { restoreBackupAtomically } from '../src/atomicRecovery.ts';
 
 const PROJECT_ID = 'demo-estudei-tjsp';
 const RULES = readFileSync('firestore.rules', 'utf8');
@@ -181,4 +182,62 @@ test('cópia restaurada mantém histórico e flashcards sem alterar o plano de o
   const other=environment.authenticatedContext('bob').firestore();
   await assertFails(getDoc(doc(other,'users/alice/profiles/recovered_tjsp')));
   await assertFails(getDocs(collection(other,'users/alice/profiles/recovered_tjsp/errors')));
+});
+
+test('recuperação atômica cria plano e todos os erros na mesma transação', async () => {
+  const owner = await setupUser('alice','tjsp');
+  const sourceRef=doc(owner,'users/alice/profiles/tjsp');
+  await assertSucceeds(updateDoc(sourceRef,{
+    exerciseLogs:[{id:'q1',questionsCount:10,correctAnswers:7,wrongAnswers:3}],
+    activityLogs:[{id:'a1',timeSpentMin:45}],
+  }));
+  await assertSucceeds(setDoc(doc(owner,'users/alice/profiles/tjsp/errors/e1'),errorNote('e1','tjsp')));
+  await assertSucceeds(setDoc(doc(owner,'users/alice/profiles/tjsp/errors/e2'),errorNote('e2','tjsp')));
+
+  const before = await getDoc(sourceRef);
+  const noteSnap = await getDocs(collection(owner,'users/alice/profiles/tjsp/errors'));
+  const backup = await createBackup({
+    user:(await getDoc(doc(owner,'users/alice'))).data(),
+    profiles:[{
+      documentId:'tjsp',data:before.data(),
+      errors:noteSnap.docs.map(n=>({documentId:n.id,data:n.data()})),
+    }],
+  });
+
+  const restored = await restoreBackupAtomically(owner,'alice',backup,'tjsp');
+  assert.notEqual(restored.newProfileId,'tjsp');
+  const newRef=doc(owner,'users/alice/profiles',restored.newProfileId);
+  const [clone, clonedNotes, origin] = await Promise.all([
+    getDoc(newRef),getDocs(collection(newRef,'errors')),getDoc(sourceRef),
+  ]);
+  assert.equal(clone.exists(),true);
+  assert.equal(clonedNotes.size,2);
+  assert.deepEqual(clone.data()?.exerciseLogs,before.data()?.exerciseLogs);
+  assert.deepEqual(clone.data()?.activityLogs,before.data()?.activityLogs);
+  assert.deepEqual(origin.data(),before.data());
+  assert.ok(clonedNotes.docs.every(n=>n.data().profileId===restored.newProfileId));
+});
+
+test('sem permissão para a conta de destino, a recuperação falha sem criar documentos', async () => {
+  const owner=await setupUser('alice','tjsp');
+  const source=await getDoc(doc(owner,'users/alice/profiles/tjsp'));
+  const backup=await createBackup({
+    user:(await getDoc(doc(owner,'users/alice'))).data(),
+    profiles:[{documentId:'tjsp',data:source.data(),errors:[]}],
+  });
+  await assert.rejects(
+    restoreBackupAtomically(owner,'bob',backup,'tjsp'),
+    error=>error?.code==='permission-denied'
+  );
+  const bobProfiles=environment.authenticatedContext('bob').firestore();
+  await assert.equal((await getDocs(collection(bobProfiles,'users/bob/profiles'))).size,0);
+  assert.equal((await getDocs(collection(owner,'users/alice/profiles'))).size,1);
+});
+
+test('nota sem perfil pai continua proibida mesmo com regra existsAfter', async () => {
+  const owner=await setupUser('alice','tjsp');
+  await assertFails(setDoc(
+    doc(owner,'users/alice/profiles/uncreated/errors/orphan'),
+    errorNote('orphan','uncreated')
+  ));
 });
