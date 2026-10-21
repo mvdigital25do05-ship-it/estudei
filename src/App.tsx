@@ -1685,7 +1685,7 @@ export default function App() {
 
           {activeTab === 'erros' && (
             activeProfileId ? (
-              <ErrorNotebook key={activeProfileId} profileId={activeProfileId} disciplines={disciplines} />
+              <ErrorNotebook profileId={activeProfileId} disciplines={disciplines} />
             ) : (
               <div className="rounded-xl border border-slate-200 bg-white p-6 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">
                 Crie ou selecione um plano de estudos para utilizar o caderno de erros.
