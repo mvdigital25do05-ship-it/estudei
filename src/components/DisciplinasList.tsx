@@ -581,7 +581,7 @@ export default function DisciplinasList({
             onClick={() => setShowImportPanel(open => !open)}
             className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
           >
-            {showImportPanel ? 'Fechar importação' : 'Importar edital'}
+            {showImportPanel ? 'Fechar importações' : 'Edital e prioridades'}
           </button>
 
           <button 
