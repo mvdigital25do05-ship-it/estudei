@@ -533,7 +533,7 @@ export default function PlanosManager({
                             {d.name}
                           </div>
                           <div className="text-[10px] text-slate-400 font-medium truncate mt-0.5">
-                            Tópicos ({d.topics.length}): {getStudyTopics(d).map(t => formatTopicName(t.name)).join(', ') || 'Nenhum'}
+                            Tópicos ({d.topics.length}): {getStudyTopics(d).map((t, index) => `${index + 1}- ${formatTopicName(t.name)}`).join(', ') || 'Nenhum'}
                           </div>
                         </div>
                         <button

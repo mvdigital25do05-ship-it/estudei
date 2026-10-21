@@ -964,8 +964,8 @@ export default function DisciplinasList({
                       className="w-full px-3 py-2 text-xs border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-850 dark:text-white rounded-lg focus:outline-none focus:border-primary font-semibold text-slate-800 animate-fade-in"
                       required
                     >
-                      {getStudyTopics(disciplines.find(d => d.id === exFormDisciplineId)).map(t => (
-                        <option key={t.id} value={t.id}>{formatTopicName(t.name)}</option>
+                      {getStudyTopics(disciplines.find(d => d.id === exFormDisciplineId)).map((t, index) => (
+                        <option key={t.id} value={t.id}>{index + 1}- {formatTopicName(t.name)}</option>
                       ))}
                       <option value="custom">+ Cadastrar Novo Tópico...</option>
                     </select>
@@ -1331,7 +1331,7 @@ export default function DisciplinasList({
                 {/* Topics scroll area */}
                 {activeDiscipline.topics && activeDiscipline.topics.length > 0 ? (
                   <div className="bg-slate-50 border border-slate-100 p-2 rounded-xl max-h-[285px] overflow-y-auto space-y-1.5">
-                    {getStudyTopics(activeDiscipline).map((topic) => {
+                    {getStudyTopics(activeDiscipline).map((topic, index) => {
                       const topicExerciseLogs = exerciseLogs.filter(log => log.topicId === topic.id);
                       const totalTopicCorrect = topicExerciseLogs.reduce((acc, curr) => acc + curr.correctAnswers, 0);
                       const totalTopicWrong = topicExerciseLogs.reduce((acc, curr) => acc + curr.wrongAnswers, 0);
@@ -1374,7 +1374,7 @@ export default function DisciplinasList({
                                   />
                                 ) : (
                                   <span className={`text-xs font-semibold truncate ${topic.completed ? 'text-slate-400 line-through font-normal' : 'text-slate-700'}`}>
-                                    {formatTopicName(topic.name)}
+                                    {index + 1}- {formatTopicName(topic.name)}
                                   </span>
                                 )}
                               </div>
