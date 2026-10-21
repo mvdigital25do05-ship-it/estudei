@@ -1,0 +1,45 @@
+name: Homologar interface Estudei 2.0
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/**'
+      - 'tests-ui/**'
+      - 'playwright.config.mjs'
+      - '.github/workflows/ui-smoke.yml'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - name: Instalar dependências do aplicativo
+        run: npm ci
+      - name: Instalar ferramenta de teste visual
+        run: npm install --no-save --package-lock=false @playwright/test@1.56.1
+      - name: Preparar Chromium para homologação
+        run: ./node_modules/.bin/playwright install --with-deps chromium
+      - name: Executar testes de tela fictícia (desktop e celular)
+        run: ./node_modules/.bin/playwright test --config playwright.config.mjs
+      - name: Salvar evidências visuais e relatórios
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: estudei2-interface-testes
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
