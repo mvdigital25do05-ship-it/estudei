@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Menu, 
   Search, 
@@ -45,6 +45,7 @@ import AuthScreen from './components/AuthScreen';
 import BackupButton from './components/BackupButton';
 import ErrorNotebook from './components/ErrorNotebook';
 import { previewOutlineMerge, type OutlineInput } from './outlineImport';
+import { createSequentialWriter } from './sequentialWriter';
 
 export default function App() {
   // Navigation active state
@@ -91,6 +92,23 @@ export default function App() {
   // Cloud Saving Status Indicators
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [saveErrorMsg, setSaveErrorMsg] = useState<string>('');
+  const saveQueueRef = useRef(createSequentialWriter());
+  const pendingWritesRef = useRef(0);
+  // A deleted profile must never be silently recreated by a late autosave.
+  const deletedProfileIdsRef = useRef(new Set<string>());
+
+  const beginSave = () => {
+    pendingWritesRef.current++;
+    setSaveStatus('saving');
+  };
+
+  const finishSave = (failed: boolean) => {
+    pendingWritesRef.current = Math.max(0, pendingWritesRef.current - 1);
+    if (failed) setSaveStatus('error');
+    else if (pendingWritesRef.current === 0) {
+      setSaveStatus(previous => previous === 'saving' ? 'saved' : previous);
+    }
+  };
 
   // Auto open discipline creation modal state
   const [autoOpenAddDiscipline, setAutoOpenAddDiscipline] = useState<boolean>(false);
@@ -167,10 +185,12 @@ export default function App() {
           // Set active sets
           setProfiles(loadedProfiles);
           setReminders(loadedReminders);
-          setActiveProfileId(activeProfile);
+          // Resolve invalid/missing selected ID before allowing autosave.
+          // Never create a phantom profile using a stale activeProfileId.
+          const targetProfile = loadedProfiles.find(p => p.id === activeProfile) || loadedProfiles[0];
+          setActiveProfileId(targetProfile?.id || '');
 
           // Hydrate dynamic views states
-          const targetProfile = loadedProfiles.find(p => p.id === activeProfile) || loadedProfiles[0];
           if (targetProfile) {
             setDisciplines(targetProfile.disciplines || []);
             setMockTests(targetProfile.mockTests || []);
@@ -308,21 +328,25 @@ export default function App() {
     if (!isLoaded || !user) return;
 
     const syncUserData = async () => {
-      setSaveStatus('saving');
+      beginSave();
+      let failed = false;
       try {
         const userRef = doc(db, 'users', user.uid);
-        await setDoc(userRef, sanitizeForFirestore({
-          activeProfileId: activeProfileId || '',
-          reminders: reminders || [],
-          name: user.displayName || 'Estudante',
-          email: user.email || ''
-        }), { merge: true });
-        setSaveStatus(prev => prev === 'saving' ? 'saved' : prev);
+        await saveQueueRef.current.enqueue(`user/${user.uid}`, () =>
+          setDoc(userRef, sanitizeForFirestore({
+            activeProfileId: activeProfileId || '',
+            reminders: reminders || [],
+            name: user.displayName || 'Estudante',
+            email: user.email || ''
+          }), { merge: true })
+        );
       } catch (error) {
-        setSaveStatus('error');
+        failed = true;
         setSaveErrorMsg(error instanceof Error ? error.message : String(error));
         console.error("Erro salvando metadados do usuário:", error);
         handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}`);
+      } finally {
+        finishSave(failed);
       }
     };
 
@@ -331,37 +355,42 @@ export default function App() {
   }, [activeProfileId, reminders, isLoaded, user]);
 
   useEffect(() => {
-    if (!isLoaded || !user || !activeProfileId) return;
+    if (!isLoaded || !user || !activeProfileId || deletedProfileIdsRef.current.has(activeProfileId)) return;
 
     const syncProfileData = async () => {
-      setSaveStatus('saving');
+      if (deletedProfileIdsRef.current.has(activeProfileId)) return;
+      beginSave();
+      let failed = false;
       try {
         const profileRef = doc(db, 'users', user.uid, 'profiles', activeProfileId);
         const currentProfile = profiles.find(p => p.id === activeProfileId);
         const name = currentProfile?.name || 'Meu Concurso';
         const createdAt = currentProfile?.createdAt || '25 Mai 2026';
         
-        await setDoc(profileRef, sanitizeForFirestore({
-          id: activeProfileId,
-          name,
-          disciplines: disciplines || [],
-          mockTests: mockTests || [],
-          exerciseLogs: exerciseLogs || [],
-          activityLogs: activityLogs || [],
-          studyBlocks: studyBlocks || [],
-          weeklyHours: weeklyHours || { done: 0, total: 30 },
-          weeklyQuestions: weeklyQuestions || { done: 0, total: 500 },
-          weeklyReviews: weeklyReviews || { done: 0, total: 100 },
-          createdAt,
-          examDate: examDate || '',
-          examName: examName || ''
-        }), { merge: true });
-        setSaveStatus('saved');
+        await saveQueueRef.current.enqueue(`profiles/${user.uid}/${activeProfileId}`, () =>
+          setDoc(profileRef, sanitizeForFirestore({
+            id: activeProfileId,
+            name,
+            disciplines: disciplines || [],
+            mockTests: mockTests || [],
+            exerciseLogs: exerciseLogs || [],
+            activityLogs: activityLogs || [],
+            studyBlocks: studyBlocks || [],
+            weeklyHours: weeklyHours || { done: 0, total: 30 },
+            weeklyQuestions: weeklyQuestions || { done: 0, total: 500 },
+            weeklyReviews: weeklyReviews || { done: 0, total: 100 },
+            createdAt,
+            examDate: examDate || '',
+            examName: examName || ''
+          }), { merge: true })
+        );
       } catch (error) {
-        setSaveStatus('error');
+        failed = true;
         setSaveErrorMsg(error instanceof Error ? error.message : String(error));
         console.error("Erro salvando dados do plano:", error);
         handleFirestoreError(error, OperationType.WRITE, `users/${user.uid}/profiles/${activeProfileId}`);
+      } finally {
+        finishSave(failed);
       }
     };
 
