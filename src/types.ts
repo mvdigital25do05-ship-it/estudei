@@ -115,6 +115,11 @@ export interface ExerciseLog {
   isNewQuestions?: boolean;
   /** Identificador da banca, opcional para compatibilidade com registros antigos. */
   examBoard?: string;
+  /** Maior dificuldade identificada no bloco, se registrada. */
+  errorCause?: 'desconhecimento' | 'confusao' | 'interpretacao' | 'desatencao' | 'tempo';
+  /** Um conceito a revisar por bloco; estrutura detalhada virá na migração de erros. */
+  ankiFront?: string;
+  ankiBack?: string;
 }
 
 export interface CargoPlan {
