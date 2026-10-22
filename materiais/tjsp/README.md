@@ -4,6 +4,10 @@
 a edição anterior, montada com recortes de páginas, que podia apresentar texto
 invisível durante a seleção em leitores de PDF. Baixe novamente para obter a correção.
 
+Atualização de 22/10/2026: removidos os avisos repetidos “Fonte: caderno original…,
+página…” do corpo dos 15 cadernos e do consolidado. O guia mantém a correspondência
+com os documentos originais.
+
 - [Baixar o PDF consolidado](./TJSP_consolidado_alinhado.pdf?raw=1)
 - [Baixar os 15 cadernos e o guia em ZIP](./TJSP_cadernos_alinhados.zip?raw=1)
 
