@@ -80,6 +80,7 @@ interface DashboardHomeProps {
   onToggleStudyDay?: (dateKey: string, newStatus: 'completed' | 'rest' | 'none') => void;
   activeProfileCreatedAt?: string;
   userCreatedAt?: string;
+  onOpenResetStudyProgress?: () => void;
 }
 
 export default function DashboardHome({
@@ -105,7 +106,8 @@ export default function DashboardHome({
   onUpdateExamInfo,
   onToggleStudyDay,
   activeProfileCreatedAt = '',
-  userCreatedAt = ''
+  userCreatedAt = '',
+  onOpenResetStudyProgress
 }: DashboardHomeProps) {
   // Local state for motivational quotes
   const [quoteIndex, setQuoteIndex] = useState(0);
@@ -977,6 +979,7 @@ export default function DashboardHome({
           </p>
         </div>
         
+        <div className="flex flex-col gap-2 self-stretch sm:self-auto">
         <button
           type="button"
           onClick={() => {
@@ -994,6 +997,11 @@ export default function DashboardHome({
           <PlusCircle size={15} className="stroke-[2.5]" />
           Adicionar Estudo
         </button>
+        {onOpenResetStudyProgress && <button type="button" onClick={onOpenResetStudyProgress}
+          className="rounded-lg border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">
+          Zerar horas ou questões
+        </button>}
+        </div>
       </div>
       
       {/* 1. Upper Dynamic Stats Row */}

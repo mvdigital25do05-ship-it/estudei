@@ -44,7 +44,8 @@ import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import AuthScreen from './components/AuthScreen';
 import BackupButton from './components/BackupButton';
 import ImportBackupButton from './components/ImportBackupButton';
-import { buildStudyResetPatch } from './resetStudyProgress';
+import { buildStudyResetPatch, StudyResetSelection } from './resetStudyProgress';
+import ResetStudyProgressDialog from './components/ResetStudyProgressDialog';
 
 export default function App() {
   // Navigation active state
@@ -97,6 +98,10 @@ export default function App() {
   const currentProfileId = useRef(activeProfileId);
   currentProfileId.current = activeProfileId;
   const [profileSaveRevision, setProfileSaveRevision] = useState(0);
+  const [resetProfileId, setResetProfileId] = useState<string | null>(null);
+  const [resetNotice, setResetNotice] = useState('');
+  const resetProfile = profiles.find(profile => profile.id === resetProfileId && profile.id === activeProfileId);
+  useEffect(() => { setResetProfileId(null); setResetNotice(''); }, [activeProfileId, user?.uid]);
 
   // Auto open discipline creation modal state
   const [autoOpenAddDiscipline, setAutoOpenAddDiscipline] = useState<boolean>(false);
@@ -394,7 +399,7 @@ export default function App() {
     user
   ]);
 
-  const handleResetStudyProgress = async (profileId: string) => {
+  const handleResetStudyProgress = async (profileId: string, selection: StudyResetSelection) => {
     if (!isLoaded || !user || !profileId || profileId !== activeProfileId || resetInProgress.current) {
       throw Error('Selecione o perfil que deseja zerar e tente novamente.');
     }
@@ -403,7 +408,7 @@ export default function App() {
     }
     if (!navigator.onLine) throw Error('Conecte-se à internet para confirmar a exclusão.');
     const userId = user.uid;
-    const patch = buildStudyResetPatch({ disciplines, mockTests, exerciseLogs, activityLogs, weeklyHours, weeklyQuestions, weeklyReviews });
+    const patch = buildStudyResetPatch({ disciplines, mockTests, exerciseLogs, activityLogs, weeklyHours, weeklyQuestions, weeklyReviews }, selection);
     resetInProgress.current = true;
     if (profileSaveTimer.current) clearTimeout(profileSaveTimer.current);
     setSaveStatus('saving');
@@ -1056,6 +1061,7 @@ export default function App() {
     const logDate = getLocalDateString(new Date(nowMs));
     const newActivity: ActivityLog = {
       id: `log_ex_${nowMs}`,
+      disciplineId: newLog.disciplineId,
       disciplineName: newLog.disciplineName,
       timeSpentMin: 0,
       timestamp: 'Agora mesmo',
@@ -1153,6 +1159,7 @@ export default function App() {
       const logDate = getLocalDateString(new Date(nowMs));
       const newLog: ActivityLog = {
         id: `log_adjust_${nowMs}`,
+        disciplineId,
         disciplineName: targetDiscName,
         timeSpentMin: diffMin,
         timestamp: 'Agora mesmo',
@@ -1244,6 +1251,7 @@ export default function App() {
     const logDate = getLocalDateString(new Date(nowMs));
     const newLog: ActivityLog = {
       id: `log_${nowMs}`,
+      disciplineId,
       disciplineName: targetDiscName,
       timeSpentMin: minutes,
       timestamp: 'Agora mesmo',
@@ -1357,6 +1365,7 @@ export default function App() {
 
     const newActivity: ActivityLog = {
       id: `log_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      disciplineId: session.disciplineId,
       disciplineName: targetDiscName,
       timeSpentMin: totalMin,
       timestamp: timestampText,
@@ -1680,6 +1689,7 @@ export default function App() {
 
         {/* Dynamic Canvas switcher based on activeTab */}
         <main className="flex-1 p-6 overflow-y-auto">
+          {activeTab === 'inicio' && resetNotice && <p role="status" className="mb-4 rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">{resetNotice}</p>}
           {activeTab === 'inicio' && (
             <DashboardHome 
               disciplines={disciplines}
@@ -1705,6 +1715,7 @@ export default function App() {
               onToggleStudyDay={handleToggleStudyDay}
               activeProfileCreatedAt={profiles.find(p => p.id === activeProfileId)?.createdAt || ''}
               userCreatedAt={user?.metadata?.creationTime || ''}
+              onOpenResetStudyProgress={db.app.options.projectId === 'estudei-2' && activeProfileId ? () => { setResetProfileId(activeProfileId); setResetNotice(''); } : undefined}
             />
           )}
 
@@ -1716,7 +1727,6 @@ export default function App() {
               onCreateProfile={handleCreateProfile}
               onDeleteProfile={handleDeleteProfile}
               onUpdateProfileName={handleUpdateProfileName}
-              onResetStudyProgress={db.app.options.projectId === 'estudei-2' ? handleResetStudyProgress : undefined}
             />
           )}
 
@@ -1774,6 +1784,13 @@ export default function App() {
               </button>
             </div>
           )}
+          {resetProfile && <ResetStudyProgressDialog key={resetProfile.id} profile={{ ...resetProfile, disciplines }}
+            onReset={async (id, selection) => {
+              await handleResetStudyProgress(id, selection);
+              const subject = disciplines.find(d => d.id === selection.disciplineId)?.name || 'Todas as matérias';
+              const metric = selection.metric === 'hours' ? 'Horas zeradas' : selection.metric === 'questions' ? 'Questões zeradas' : 'Horas e questões zeradas';
+              setResetNotice(`${metric}: ${subject}. Alteração salva.`);
+            }} onClose={() => setResetProfileId(null)} />}
         </main>
 
       </div>

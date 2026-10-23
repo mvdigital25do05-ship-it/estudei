@@ -3,9 +3,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { JSDOM } from 'jsdom';
 import { CargoPlan } from './types';
-import { buildStudyResetPatch } from './resetStudyProgress';
+import { ALL_DISCIPLINES, buildStudyResetPatch, StudyResetSelection } from './resetStudyProgress';
 import ResetStudyProgressDialog from './components/ResetStudyProgressDialog';
 import PlanosManager from './components/PlanosManager';
+import DashboardHome from './components/DashboardHome';
 
 const dom = new JSDOM('<!doctype html><html><body></body></html>', { url: 'http://localhost' });
 Object.assign(globalThis, { window: dom.window, document: dom.window.document, HTMLElement: dom.window.HTMLElement, IS_REACT_ACT_ENVIRONMENT: true });
@@ -26,26 +27,106 @@ function profile(id = 'escrevente'): CargoPlan {
   };
 }
 
-test('zera todos os contadores e históricos, preserva tópicos concluídos e metas sem mutar a origem', () => {
+const allBoth: StudyResetSelection = { disciplineId: ALL_DISCIPLINES, metric: 'both' };
+const now = new Date('2026-10-23T12:00:00');
+
+test('zera os valores escolhidos, preserva sessões, tópicos concluídos e metas sem mutar a origem', () => {
   const original = profile();
   const snapshot = structuredClone(original);
-  const reset = buildStudyResetPatch(original);
+  const reset = buildStudyResetPatch(original, allBoth, now);
   assert.deepEqual(original, snapshot);
   assert.deepEqual(reset.disciplines[0], { ...original.disciplines[0], timeSpentMin: 0, correctAnswers: 0, wrongAnswers: 0 });
   assert.deepEqual(reset.disciplines[0].topics, original.disciplines[0].topics);
-  assert.deepEqual([reset.activityLogs, reset.exerciseLogs, reset.mockTests], [[], [], []]);
-  assert.deepEqual([reset.weeklyHours, reset.weeklyQuestions, reset.weeklyReviews], [{ done: 0, total: 24 }, { done: 0, total: 300 }, { done: 0, total: 5 }]);
+  assert.equal(reset.activityLogs.length, 1);
+  assert.equal(reset.activityLogs[0].timeSpentMin, 0);
+  assert.equal(reset.activityLogs[0].questionsSolved, 0);
+  assert.deepEqual([reset.exerciseLogs, reset.mockTests], [[], []]);
+  assert.deepEqual([reset.weeklyHours, reset.weeklyQuestions, reset.weeklyReviews], [{ done: 0, total: 24 }, { done: 0, total: 300 }, { done: 1, total: 5 }]);
   assert.deepEqual(Object.keys(reset).sort(), ['disciplines', 'activityLogs', 'exerciseLogs', 'mockTests', 'weeklyHours', 'weeklyQuestions', 'weeklyReviews'].sort());
 });
 
 test('patch aplicado a um perfil preserva os demais, planejamento e informações do concurso', () => {
   const original = profile();
   const other = profile('fiscal');
-  const patch = buildStudyResetPatch(original);
+  const patch = buildStudyResetPatch(original, allBoth, now);
   const next = [original, other].map(p => p.id === original.id ? { ...p, ...patch } : p);
   assert.strictEqual(next[1], other);
   for (const key of ['id', 'name', 'examName', 'examDate', 'createdAt', 'studyBlocks'] as const) assert.deepEqual(next[0][key], original[key]);
-  assert.deepEqual(buildStudyResetPatch(next[0]), patch);
+  assert.deepEqual(buildStudyResetPatch(next[0], allBoth, now), patch);
+});
+
+function twoSubjects(): CargoPlan {
+  const p = profile();
+  p.disciplines.push({ ...structuredClone(p.disciplines[0]), id: 'tjsp_LP', name: 'Português', timeSpentMin: 60, correctAnswers: 15, wrongAnswers: 5,
+    topics: [{ id: 'lp_1', name: 'Interpretação', completed: false }] });
+  p.activityLogs.push({ ...p.activityLogs[0], id: 'other', disciplineName: 'Português', timeSpentMin: 60, questionsSolved: 20, correctAnswers: 15, wrongAnswers: 5 });
+  p.exerciseLogs.push({ ...p.exerciseLogs[0], id: 'other-ex', disciplineId: 'tjsp_LP', disciplineName: 'Português', correctAnswers: 15, wrongAnswers: 5, questionsCount: 20 });
+  p.weeklyHours.done = 4; p.weeklyQuestions.done = 120;
+  return p;
+}
+
+test('somente horas de Penal zera seus minutos nos contadores e gráficos, preserva todas as questões', () => {
+  const p = twoSubjects();
+  const patch = buildStudyResetPatch(p, { disciplineId: 'tjsp_DP', metric: 'hours' }, now);
+  assert.equal(patch.disciplines[0].timeSpentMin, 0);
+  assert.equal(patch.disciplines[0].correctAnswers, 70);
+  assert.strictEqual(patch.disciplines[1], p.disciplines[1]);
+  assert.equal(patch.activityLogs[0].timeSpentMin, 0);
+  assert.equal(patch.activityLogs[0].questionsSolved, 100);
+  assert.strictEqual(patch.activityLogs[1], p.activityLogs[1]);
+  assert.strictEqual(patch.exerciseLogs, p.exerciseLogs);
+  assert.strictEqual(patch.mockTests, p.mockTests);
+  assert.equal(patch.weeklyHours.done, 1);
+  assert.strictEqual(patch.weeklyQuestions, p.weeklyQuestions);
+  assert.strictEqual(patch.weeklyReviews, p.weeklyReviews);
+});
+
+test('somente questões de Penal preserva horas e resultados das outras matérias e simulados gerais', () => {
+  const p = twoSubjects();
+  const patch = buildStudyResetPatch(p, { disciplineId: 'tjsp_DP', metric: 'questions' }, now);
+  assert.equal(patch.disciplines[0].timeSpentMin, 180);
+  assert.equal(patch.disciplines[0].correctAnswers + patch.disciplines[0].wrongAnswers, 0);
+  assert.strictEqual(patch.disciplines[1], p.disciplines[1]);
+  assert.equal(patch.activityLogs[0].timeSpentMin, 180);
+  assert.equal(patch.activityLogs[0].questionsSolved, 0);
+  assert.strictEqual(patch.activityLogs[1], p.activityLogs[1]);
+  assert.deepEqual(patch.exerciseLogs, [p.exerciseLogs[1]]);
+  assert.strictEqual(patch.mockTests, p.mockTests);
+  assert.strictEqual(patch.weeklyHours, p.weeklyHours);
+  assert.equal(patch.weeklyQuestions.done, 20);
+});
+
+test('ambos de uma matéria afeta só sua contribuição semanal e ignora registros de outra semana', () => {
+  const p = twoSubjects();
+  p.activityLogs.push({ ...p.activityLogs[1], id: 'old', date: '2026-09-01', timeSpentMin: 600, questionsSolved: 999 });
+  const patch = buildStudyResetPatch(p, { disciplineId: 'tjsp_DP', metric: 'both' }, now);
+  assert.equal(patch.disciplines[0].timeSpentMin + patch.disciplines[0].correctAnswers + patch.disciplines[0].wrongAnswers, 0);
+  assert.strictEqual(patch.disciplines[1], p.disciplines[1]);
+  assert.equal(patch.weeklyHours.done, 1); assert.equal(patch.weeklyQuestions.done, 20);
+  assert.equal(patch.activityLogs.length, 3);
+});
+
+test('seleção inválida é recusada; ID e tópico identificam a matéria mesmo com nome antigo', () => {
+  const p = twoSubjects();
+  assert.throws(() => buildStudyResetPatch(p, { disciplineId: 'ausente', metric: 'hours' }));
+  assert.throws(() => buildStudyResetPatch(p, { disciplineId: 'tjsp_DP', metric: 'outro' } as any));
+  p.activityLogs[0].disciplineName = 'Nome antigo';
+  p.activityLogs[0].topicId = 'tjsp_DP_010';
+  assert.equal(buildStudyResetPatch(p, { disciplineId: 'tjsp_DP', metric: 'hours' }, now).activityLogs[0].timeSpentMin, 0);
+  p.activityLogs[0].disciplineId = 'tjsp_LP';
+  assert.equal(buildStudyResetPatch(p, { disciplineId: 'tjsp_DP', metric: 'hours' }, now).activityLogs[0].timeSpentMin, 180);
+});
+
+test('resumos automáticos são atualizados sem apagar as observações da sessão', () => {
+  const p = profile();
+  p.activityLogs[0].details = 'Estudou Teoria por 3h 00min usando PDF. Resolveu 100 questões (70 acertos / 30 erros). Obs: "Rever artigo 327"';
+  const hours = buildStudyResetPatch(p, { disciplineId: 'tjsp_DP', metric: 'hours' }, now);
+  assert.doesNotMatch(hours.activityLogs[0].details, /3h/);
+  assert.match(hours.activityLogs[0].details, /100 questões/);
+  const questions = buildStudyResetPatch(p, { disciplineId: 'tjsp_DP', metric: 'questions' }, now);
+  assert.match(questions.activityLogs[0].details, /3h 00min/);
+  assert.doesNotMatch(questions.activityLogs[0].details, /70 acertos/);
+  assert.match(questions.activityLogs[0].details, /Rever artigo 327/);
 });
 
 async function mount(element: React.ReactNode) {
@@ -64,6 +145,11 @@ const button = (node: ParentNode, text: string) => {
 };
 const click = async (node: HTMLElement) => { await act(async () => node.click()); };
 async function acknowledge(container: HTMLElement) {
+  const subject = container.querySelector<HTMLSelectElement>('#reset-study-subject')!;
+  if (!subject.value) {
+    await act(async () => { subject.value = 'tjsp_DP'; subject.dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
+  }
+  if (!container.querySelector('input[type="radio"]:checked')) await click(container.querySelector<HTMLInputElement>('input[value="both"]')!);
   await click(container.querySelector<HTMLInputElement>('input[type="checkbox"]')!);
   await click(button(container, 'Continuar'));
 }
@@ -140,18 +226,41 @@ test('falha de gravação mantém o diálogo aberto e permite tentar novamente',
   assert.equal(calls, 2); assert.equal(closed, 1);
 });
 
-test('Planos só oferece o reset do perfil ativo; trocar de perfil invalida a confirmação aberta', async t => {
-  const profiles = [profile(), profile('fiscal')]; const calls: string[] = [];
-  const props = { profiles, onSwitchProfile: () => {}, onCreateProfile: () => {}, onDeleteProfile: () => {}, onUpdateProfileName: () => {}, onResetStudyProgress: async (id: string) => { calls.push(id); } };
-  const ui = await mount(<PlanosManager {...props} activeProfileId="escrevente" />); t.after(ui.dispose);
-  assert.equal([...ui.container.querySelectorAll('button')].filter(b => b.textContent === 'Zerar horas e questões').length, 1);
-  await click(button(ui.container, 'Zerar horas e questões'));
-  assert.match(ui.container.querySelector('dialog')!.textContent!, /Escrevente TJSP/);
-  await acknowledge(ui.container); await type(ui.container, 'ZERAR');
-  await ui.render(<PlanosManager {...props} activeProfileId="fiscal" />);
-  assert.equal(ui.container.querySelector('dialog'), null);
-  await ui.render(<PlanosManager {...props} activeProfileId="escrevente" />);
-  assert.equal(ui.container.querySelector('dialog'), null); assert.deepEqual(calls, []);
-  await click(button(ui.container, 'Zerar horas e questões'));
+test('alterar matéria ou métrica invalida a primeira confirmação e envia a seleção exata', async t => {
+  const calls: StudyResetSelection[] = [];
+  const ui = await mount(<ResetStudyProgressDialog profile={twoSubjects()} onReset={async (_id, selection) => { calls.push(selection); }} onClose={() => {}} />); t.after(ui.dispose);
+  const select = ui.container.querySelector<HTMLSelectElement>('select')!;
+  await act(async () => { select.value = 'tjsp_LP'; select.dispatchEvent(new dom.window.Event('change', { bubbles: true })); });
+  await click(ui.container.querySelector<HTMLInputElement>('input[value="hours"]')!);
+  await click(ui.container.querySelector<HTMLInputElement>('input[type="checkbox"]')!);
+  assert.equal(button(ui.container, 'Continuar').disabled, false);
+  await click(ui.container.querySelector<HTMLInputElement>('input[value="questions"]')!);
   assert(button(ui.container, 'Continuar').disabled);
+  const summary = ui.container.querySelector('[aria-label="Resumo da seleção"]')!;
+  assert.match(summary.textContent!, /Português — Somente questões/);
+  assert.match(summary.textContent!, /20/);
+  await click(ui.container.querySelector<HTMLInputElement>('input[type="checkbox"]')!);
+  await click(button(ui.container, 'Continuar')); await type(ui.container, 'ZERAR');
+  await click(button(ui.container, 'Zerar definitivamente'));
+  assert.deepEqual(calls, [{ disciplineId: 'tjsp_LP', metric: 'questions' }]);
+});
+
+test('mudança de perfil remonta o diálogo sem reutilizar confirmações', async t => {
+  const ui = await mount(<ResetStudyProgressDialog key="a" profile={profile()} onReset={async () => {}} onClose={() => {}} />); t.after(ui.dispose);
+  await acknowledge(ui.container); await type(ui.container, 'ZERAR');
+  await ui.render(<ResetStudyProgressDialog key="b" profile={profile('fiscal')} onReset={async () => {}} onClose={() => {}} />);
+  assert(button(ui.container, 'Continuar').disabled);
+  assert.equal(ui.container.querySelector<HTMLSelectElement>('select')!.value, '');
+});
+
+test('a ação fica no cabeçalho do Início e foi removida da tela de Planos', async t => {
+  const p = profile(); let opened = 0;
+  const ui = await mount(<DashboardHome disciplines={p.disciplines} activityLogs={p.activityLogs} exerciseLogs={p.exerciseLogs} reminders={[]}
+    weeklyGoalsHours={p.weeklyHours} weeklyGoalsQuestions={p.weeklyQuestions} weeklyGoalsReviews={p.weeklyReviews}
+    activeProfileName={p.name} profilesCount={1} onAddReminder={() => {}} onToggleReminder={() => {}} onDeleteReminder={() => {}}
+    onDeleteActivityLog={() => {}} onAddStudySession={() => {}} onCreateProfile={() => {}} onOpenResetStudyProgress={() => { opened++; }} />); t.after(ui.dispose);
+  await click(button(ui.container, 'Zerar horas ou questões')); assert.equal(opened, 1);
+  assert(button(ui.container, 'Adicionar Estudo').parentElement!.contains(button(ui.container, 'Zerar horas ou questões')));
+  await ui.render(<PlanosManager profiles={[p]} activeProfileId={p.id} onSwitchProfile={() => {}} onCreateProfile={() => {}} onDeleteProfile={() => {}} onUpdateProfileName={() => {}} />);
+  assert(!ui.container.textContent!.includes('Zerar horas'));
 });

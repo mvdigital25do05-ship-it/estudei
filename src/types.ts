@@ -62,6 +62,7 @@ export interface MockTest {
 
 export interface ActivityLog {
   id: string;
+  disciplineId?: string;
   disciplineName: string;
   timeSpentMin: number;
   timestamp: string; // "5h55min" or "Há 2 horas"
