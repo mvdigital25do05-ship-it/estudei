@@ -467,8 +467,8 @@ export default function DashboardHome({
 
     onAddStudySession({
       disciplineId: studyDisciplineId,
-      hours: studyHours,
-      minutes: studyMinutes,
+      hours: Number(studyHours) || 0,
+      minutes: Number(studyMinutes) || 0,
       type: studyType,
       material: studyMaterial,
       correct: includeQuestions ? studyCorrect : undefined,

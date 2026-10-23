@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   Award, 
   Plus, 
@@ -19,6 +19,7 @@ import { CargoPlan, Discipline, Topic } from '../types';
 import { formatMinutes, formatTopicName } from '../utils';
 import { getStudyTopics } from '../studyOrder';
 import { getMainTopicProgress } from '../topicGroups';
+import ResetStudyProgressDialog from './ResetStudyProgressDialog';
 
 interface PlanosManagerProps {
   profiles: CargoPlan[];
@@ -27,6 +28,7 @@ interface PlanosManagerProps {
   onCreateProfile: (name: string, templateType: string, initialDisciplines?: Discipline[]) => void;
   onDeleteProfile: (id: string) => void;
   onUpdateProfileName: (id: string, newName: string) => void;
+  onResetStudyProgress?: (id: string) => Promise<void>;
 }
 
 export default function PlanosManager({
@@ -35,7 +37,8 @@ export default function PlanosManager({
   onSwitchProfile,
   onCreateProfile,
   onDeleteProfile,
-  onUpdateProfileName
+  onUpdateProfileName,
+  onResetStudyProgress
 }: PlanosManagerProps) {
   const [showAddModal, setShowAddModal] = useState(false);
   const [newPlanName, setNewPlanName] = useState('');
@@ -43,6 +46,10 @@ export default function PlanosManager({
   
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editNameValue, setEditNameValue] = useState('');
+  const [resetProfileId, setResetProfileId] = useState<string | null>(null);
+  const [resetDone, setResetDone] = useState(false);
+  const resetProfile = profiles.find(profile => profile.id === resetProfileId && profile.id === activeProfileId);
+  useEffect(() => { setResetProfileId(null); setResetDone(false); }, [activeProfileId]);
 
   // Form state for enqueuing initial subjects & topics
   const [enqueuedDisciplines, setEnqueuedDisciplines] = useState<Discipline[]>([]);
@@ -358,10 +365,20 @@ export default function PlanosManager({
                 </div>
               </div>
 
+              {isActive && onResetStudyProgress && <div className="border-t border-slate-200 px-4 py-3 dark:border-slate-800">
+                <button type="button" onClick={() => { setResetProfileId(profile.id); setResetDone(false); }}
+                  className="text-xs font-bold text-rose-600 hover:underline dark:text-rose-400">Zerar horas e questões</button>
+              </div>}
+
             </div>
           );
         })}
       </div>
+
+      {resetDone && <p role="status" className="rounded-xl bg-emerald-50 p-4 text-sm text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200">Horas, questões e históricos do perfil foram zerados e salvos.</p>}
+      {resetProfile && onResetStudyProgress && <ResetStudyProgressDialog key={resetProfile.id} profile={resetProfile}
+        onReset={async id => { await onResetStudyProgress(id); setResetDone(true); }}
+        onClose={() => setResetProfileId(null)} />}
 
       {/* MODAL CO-CREATION FORM */}
       {showAddModal && (

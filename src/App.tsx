@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Menu, 
   Search, 
@@ -39,11 +39,12 @@ import PlanejamentoSchedule from './components/PlanejamentoSchedule';
 import SimuladosQuestoes from './components/SimuladosQuestoes';
 
 // Firebase imports
-import { doc, getDoc, getDocs, setDoc, deleteDoc, collection } from 'firebase/firestore';
+import { doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc, collection } from 'firebase/firestore';
 import { auth, db, OperationType, handleFirestoreError } from './firebase';
 import AuthScreen from './components/AuthScreen';
 import BackupButton from './components/BackupButton';
 import ImportBackupButton from './components/ImportBackupButton';
+import { buildStudyResetPatch } from './resetStudyProgress';
 
 export default function App() {
   // Navigation active state
@@ -90,6 +91,12 @@ export default function App() {
   // Cloud Saving Status Indicators
   const [saveStatus, setSaveStatus] = useState<'saved' | 'saving' | 'error'>('saved');
   const [saveErrorMsg, setSaveErrorMsg] = useState<string>('');
+  const profileSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pendingProfileSave = useRef<Promise<void>>(Promise.resolve());
+  const resetInProgress = useRef(false);
+  const currentProfileId = useRef(activeProfileId);
+  currentProfileId.current = activeProfileId;
+  const [profileSaveRevision, setProfileSaveRevision] = useState(0);
 
   // Auto open discipline creation modal state
   const [autoOpenAddDiscipline, setAutoOpenAddDiscipline] = useState<boolean>(false);
@@ -331,6 +338,7 @@ export default function App() {
 
   useEffect(() => {
     if (!isLoaded || !user || !activeProfileId) return;
+    if (resetInProgress.current) return;
 
     const syncProfileData = async () => {
       setSaveStatus('saving');
@@ -364,7 +372,10 @@ export default function App() {
       }
     };
 
-    const timeout = setTimeout(syncProfileData, 600);
+    const timeout = setTimeout(() => {
+      pendingProfileSave.current = syncProfileData().catch(() => undefined);
+    }, 600);
+    profileSaveTimer.current = timeout;
     return () => clearTimeout(timeout);
   }, [
     disciplines,
@@ -378,9 +389,53 @@ export default function App() {
     examDate,
     examName,
     activeProfileId,
+    profileSaveRevision,
     isLoaded,
     user
   ]);
+
+  const handleResetStudyProgress = async (profileId: string) => {
+    if (!isLoaded || !user || !profileId || profileId !== activeProfileId || resetInProgress.current) {
+      throw Error('Selecione o perfil que deseja zerar e tente novamente.');
+    }
+    if (db.app.options.projectId !== 'estudei-2') {
+      throw Error('Esta função está disponível no Estudei 2.');
+    }
+    if (!navigator.onLine) throw Error('Conecte-se à internet para confirmar a exclusão.');
+    const userId = user.uid;
+    const patch = buildStudyResetPatch({ disciplines, mockTests, exerciseLogs, activityLogs, weeklyHours, weeklyQuestions, weeklyReviews });
+    resetInProgress.current = true;
+    if (profileSaveTimer.current) clearTimeout(profileSaveTimer.current);
+    setSaveStatus('saving');
+    try {
+      // An older autosave must finish before the reset, or it could restore old totals.
+      await pendingProfileSave.current;
+      if (currentProfileId.current !== profileId || auth.currentUser?.uid !== userId) {
+        throw Error('O perfil ou a conta mudou. Abra a confirmação novamente.');
+      }
+      await updateDoc(doc(db, 'users', userId, 'profiles', profileId), sanitizeForFirestore(patch));
+      setProfiles(prev => prev.map(profile => profile.id === profileId ? { ...profile, ...patch } : profile));
+      if (currentProfileId.current === profileId && auth.currentUser?.uid === userId) {
+        setDisciplines(patch.disciplines);
+        setMockTests(patch.mockTests);
+        setExerciseLogs(patch.exerciseLogs);
+        setActivityLogs(patch.activityLogs);
+        setWeeklyHours(patch.weeklyHours);
+        setWeeklyQuestions(patch.weeklyQuestions);
+        setWeeklyReviews(patch.weeklyReviews);
+      }
+      setSaveStatus('saved');
+    } catch (cause) {
+      setSaveStatus('error');
+      setSaveErrorMsg(cause instanceof Error ? cause.message : String(cause));
+      console.error('Falha ao zerar horas e questões', cause);
+      throw Error('Não foi possível confirmar a exclusão. Verifique a conexão e tente novamente.');
+    } finally {
+      resetInProgress.current = false;
+      // Resume ordinary autosave after success or failure, including edits queued before opening the dialog.
+      setProfileSaveRevision(revision => revision + 1);
+    }
+  };
 
   // 5. Logout secure session handler
   const handleLogout = async () => {
@@ -1661,6 +1716,7 @@ export default function App() {
               onCreateProfile={handleCreateProfile}
               onDeleteProfile={handleDeleteProfile}
               onUpdateProfileName={handleUpdateProfileName}
+              onResetStudyProgress={db.app.options.projectId === 'estudei-2' ? handleResetStudyProgress : undefined}
             />
           )}
 

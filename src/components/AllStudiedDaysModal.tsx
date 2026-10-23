@@ -1179,7 +1179,7 @@ export default function AllStudiedDaysModal({
                           <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs" title="Dia estudado" />
                         )}
                         {isRest && (
-                          <Coffee size={10} className="text-blue-500" title="Dia de descanso" />
+                          <Coffee size={10} className="text-blue-500"><title>Dia de descanso</title></Coffee>
                         )}
                       </div>
 
